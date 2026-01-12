@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Percurso</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Preload das fontes -->
+  <link rel="preload" href="assets/fonts/Aileron-Regular.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="assets/fonts/Simpsonfont%20DEMO.otf" as="font" type="font/otf" crossorigin>
+</head>
+
+<body>
+  <!-- TOP BAR: sempre visível -->
+  <header class="globalbar" id="globalBar">
+    <div class="globalbar__left">
+      <img class="globalbar__logo" src="assets/logo.png" alt="Postais por Lisboa" />
+      <div class="globalbar__titles">
+        <p class="globalbar__kicker" id="globalKicker">Postais por Lisboa</p>
+        <h1 class="globalbar__title" id="globalTitle">Percurso</h1>
+      </div>
+    </div>
+
+    <div class="globalbar__right">
+      <button class="reset-btn" id="resetBtn" type="button" title="Recomeçar percurso">
+        Recomeçar
+      </button>
+
+      <div class="lang" aria-label="Idioma">
+        <button class="lang-btn" data-lang="pt" aria-pressed="true">PT</button>
+        <button class="lang-btn" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
+
+    <!-- progresso global (percurso) -->
+    <div class="globalbar__progress">
+      <p class="subtitle" id="progressText">Ponto 1 de 9</p>
+      <div class="progressbar" aria-hidden="true"><span id="progressBar"></span></div>
+    </div>
+  </header>
+
+  <!-- POPUP/OVERLAY: dica de scroll (aparece sempre ao abrir/refresh) -->
+  <div class="scroll-overlay" id="scrollOverlay" aria-hidden="false">
+    <div class="scroll-overlay__card">
+      <p class="scroll-overlay__title" id="overlayTitle">Bem-vindo ✨</p>
+      <p class="scroll-overlay__text" id="overlayText">Faz scroll para começares a descobrir o mapa</p>
+      <div class="scroll-overlay__arrow" aria-hidden="true">↓</div>
+    </div>
+  </div>
+
+  <div class="chapters">
+    <!-- INTRO -->
+    <section class="intro chapter" id="intro" aria-label="Introdução">
+      <div class="intro-sticky" id="introSticky">
+        <div class="intro-top">
+          <div class="intro-copy" aria-hidden="true">
+            <h2 class="intro-title" id="introTitle">Segue a cidade<br/>ponto a ponto</h2>
+            <p class="intro-sub" id="introSub">Ouve a história antes de entrar. Avança no percurso ao teu ritmo.</p>
+          </div>
+        </div>
+
+        <!-- INTRO: mapa por camadas (full width) -->
+        <div class="intro-visual" id="introVisual">
+          <div class="intro-map" id="sharedMap" aria-hidden="true">
+            <img class="layer l1" src="assets/intro/01-background.webp" alt="" decoding="async" />
+            <img class="layer l2" src="assets/intro/02-ruas.webp" alt="" decoding="async" />
+            <img class="layer l3" src="assets/intro/03-elementos.webp" alt="" decoding="async" />
+            <img class="layer l4" src="assets/intro/04-percurso.webp" alt="" decoding="async" />
+            <img class="layer l5" src="assets/intro/05-icones.webp" alt="" decoding="async" />
+            <img class="layer l6" src="assets/intro/06-nomes.webp" alt="" decoding="async" />
+          </div>
+        </div>
+
+        <div class="scroll-hint" id="scrollHint">Faz scroll</div>
+      </div>
+    </section>
+
+    <!-- ROTA -->
+    <section class="route chapter" id="routeChapter" aria-label="Rota">
+      <main class="route-wrap is-hidden" id="route">
+        <!-- MESMO MAPA da intro em sticky (sem duplicar) -->
+        <section class="sticky-map" aria-label="Mapa">
+          <div class="sticky-map__mount" id="stickyMapMount"></div>
+        </section>
+
+        <!-- PLAYER estilo Spotify (só 1 ponto visível) -->
+        <section class="player" aria-label="Player do percurso">
+          <div class="player-card">
+            <div class="player-top">
+              <div class="player-meta">
+                <p class="player-kicker" id="playerKicker">Ponto atual</p>
+                <h3 class="player-title" id="playerTitle">—</h3>
+
+                <!-- barra do progresso do percurso (baixo do nome) -->
+                <div class="player-routebar" aria-hidden="true">
+                  <span id="playerRouteBar"></span>
+                </div>
+              </div>
+
+              <div class="player-controls" aria-label="Controlos">
+                <button class="ctl" id="prevBtn" type="button" aria-label="Anterior" title="Anterior">⟨</button>
+                <button class="ctl play" id="playBtn" type="button" aria-label="Reproduzir/Pausar" title="Play/Pause">▶</button>
+                <button class="ctl" id="nextBtn" type="button" aria-label="Seguinte" title="Seguinte" disabled>⟩</button>
+              </div>
+            </div>
+
+            <!-- barra fininha do progresso do ÁUDIO (separada da do percurso) -->
+            <div class="player-audiobar" aria-hidden="true">
+              <span id="playerAudioBar"></span>
+            </div>
+
+            <!-- áudio real (sem controls visíveis; controlamos via botões) -->
+            <audio id="playerAudio" preload="metadata"></audio>
+
+            <div class="player-bottom">
+              <p class="player-text" id="playerText"></p>
+            </div>
+          </div>
+        </section>
+
+        <footer class="route-footer" aria-hidden="true">
+          <div class="route-footer__line"></div>
+          <p class="route-footer__copy" id="footerCopy">Postais por Lisboa — percurso interativo</p>
+        </footer>
+      </main>
+    </section>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
