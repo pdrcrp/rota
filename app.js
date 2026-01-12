@@ -2,15 +2,6 @@
 const REQUIRED_TOTAL = 9;
 const replacementRules = { 6: "optA", 7: "optB" };
 
-const MAP_SRCS = [
-  "assets/intro/01-background.webp",
-  "assets/intro/02-ruas.webp",
-  "assets/intro/03-elementos.webp",
-  "assets/intro/04-percurso.webp",
-  "assets/intro/05-icones.webp",
-  "assets/intro/06-nomes.webp",
-];
-
 const points = [
   { id:"p1", kind:"required", order:1, label:"1", x:18, y:22,
     title:{pt:"O Largo", en:"O Largo"},
@@ -118,9 +109,6 @@ if (saved) {
   if (Number.isFinite(n) && n >= 1 && n <= REQUIRED_TOTAL) currentRequired = n;
 }
 
-// ✅ Anti-piscar: só mostramos a rota quando o mapa estiver carregado
-let mapReady = false;
-
 // ====== ELEMENTOS ======
 const stopList = document.getElementById("stopList");
 
@@ -149,16 +137,18 @@ const intro = document.getElementById("intro");
 const scrollHint = document.getElementById("scrollHint");
 const scrollOverlay = document.getElementById("scrollOverlay");
 
+// Intro copy
 const introTitle = document.getElementById("introTitle");
 const introSub = document.getElementById("introSub");
 
+// ✅ layers agora vêm do sticky map (um único mapa)
 const introLayers = [
-  document.querySelector(".intro-map .l1"),
-  document.querySelector(".intro-map .l2"),
-  document.querySelector(".intro-map .l3"),
-  document.querySelector(".intro-map .l4"),
-  document.querySelector(".intro-map .l5"),
-  document.querySelector(".intro-map .l6")
+  document.querySelector(".sticky-map .l1"),
+  document.querySelector(".sticky-map .l2"),
+  document.querySelector(".sticky-map .l3"),
+  document.querySelector(".sticky-map .l4"),
+  document.querySelector(".sticky-map .l5"),
+  document.querySelector(".sticky-map .l6")
 ];
 
 const globalTitle = document.getElementById("globalTitle");
@@ -243,22 +233,9 @@ function saveSets() {
 }
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
 
-function preloadImages(urls){
-  return Promise.all(urls.map(src => new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(false);
-    img.src = src;
-  })));
-}
-
 // ====== VISIBILIDADE DA ROTA ======
 function setRouteVisible(visible) {
   if (!routeWrap) return;
-
-  // ✅ Só mostra a rota se o mapa estiver pronto
-  if (visible && !mapReady) return;
-
   if (visible) {
     routeWrap.classList.remove("is-hidden");
     routeWrap.classList.add("is-shown");
@@ -293,7 +270,7 @@ function optionalIsAvailableNow(optionalPoint) {
   return false;
 }
 
-// ====== MAP PINS ======
+// ====== MAP PINS (no MESMO mapa) ======
 function renderPins() {
   if (!routePins) return;
   routePins.innerHTML = "";
@@ -554,7 +531,8 @@ continueBtn.addEventListener("click", () => {
   ) {
     substitutedRequired.add(currentRequired);
     usedOptionals.add(openedPoint.id);
-    saveSets();
+    localStorage.setItem("substitutedRequired", JSON.stringify([...substitutedRequired]));
+    localStorage.setItem("usedOptionals", JSON.stringify([...usedOptionals]));
 
     if (currentRequired < REQUIRED_TOTAL) {
       currentRequired += 1;
@@ -585,7 +563,6 @@ function applyStaticTexts() {
 
   tracksTitle.textContent = ui[lang].tracksTitle;
   tracksSub.textContent = ui[lang].tracksSub;
-
   footerCopy.textContent = ui[lang].footer;
 
   resetBtn.textContent = ui[lang].reset;
@@ -596,6 +573,7 @@ function setLang(newLang) {
   langBtns.forEach(b =>
     b.setAttribute("aria-pressed", b.dataset.lang === newLang ? "true" : "false")
   );
+
   applyStaticTexts();
   updateHeader();
   renderStopList();
@@ -633,6 +611,7 @@ function resetProgress() {
   renderStopList();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
+
   initOverlay();
   setRouteVisible(false);
 }
@@ -642,7 +621,7 @@ resetBtn.addEventListener("click", () => {
   if (ok) resetProgress();
 });
 
-// ====== INTRO: animação ======
+// ====== INTRO: animação com scroll (no MESMO mapa sticky) ======
 function layerUpdate(layer, t, depthPx) {
   if (!layer) return;
   layer.style.opacity = String(t);
@@ -683,9 +662,10 @@ function updateIntroAnimation() {
     scrollHint.style.opacity = String(1 - tHint);
   }
 
-  // ✅ Só mostrar rota quando a animação acabou E o mapa está pronto
+  // mostra a rota no fim (o mapa é o mesmo, apenas aparecem pins/lista)
   const showRoute = scrolled >= 0.93;
   setRouteVisible(showRoute);
+  if (showRoute) renderPins();
 }
 
 // throttle 30fps
@@ -707,7 +687,6 @@ function onScroll(){
     });
   }
 }
-
 window.addEventListener("scroll", onScroll, { passive: true });
 
 // ====== INIT ======
@@ -720,12 +699,6 @@ renderStopList();
 setRouteVisible(false);
 initOverlay();
 updateIntroAnimation();
-
-preloadImages(MAP_SRCS).then(() => {
-  mapReady = true;
-  // reavalia a animação/visibilidade caso o utilizador já esteja no fim da intro
-  updateIntroAnimation();
-});
 
 requestAnimationFrame(() => {
   updateIntroAnimation();
