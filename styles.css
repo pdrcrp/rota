@@ -344,6 +344,24 @@ body::before{
   animation: bounce 1.05s infinite;
 }
 
+/* ✅ QUANDO ENTRA NA ROTA:
+   colapsa a “zona do mapa” da intro para não ficar buraco vazio
+*/
+body.route-mode .intro{
+  height: auto;
+}
+body.route-mode .intro-sticky{
+  position: relative;
+  height: auto;
+  padding-bottom: 0;
+}
+body.route-mode .intro-visual{
+  display: none;
+}
+body.route-mode .scroll-hint{
+  display: none;
+}
+
 /* =========================
    ROUTE
 ========================= */
@@ -354,7 +372,7 @@ body::before{
   margin: 0 auto;
   padding: 12px 14px 26px;
 
-  /* IMPORTANTE: sem transform aqui para não matar sticky no iOS */
+  /* sem transform aqui para não matar sticky no iOS */
   transition: opacity .35s ease;
 }
 
@@ -376,10 +394,13 @@ body::before{
   padding-top: 8px;
 }
 
+/* ✅ garante altura do mount para evitar “saltos” */
 .sticky-map__mount{
   width: 100%;
+  min-height: min(72vh, 520px);
 }
 
+/* quando o mapa é montado no sticky, mantém look full width */
 .sticky-map .intro-map{
   width: 100vw;
   margin-left: calc(50% - 50vw);
