@@ -221,7 +221,7 @@ window.addEventListener("load", () => {
   updateIntroAnimation();
 }, { once: true });
 
-// ====== PROGRESSO (global + player-routebar) ======
+// ====== PROGRESSO ======
 function updateProgressUI(){
   progressText.textContent = ui[lang].progress(currentRequired);
 
@@ -320,7 +320,6 @@ function applyStaticTexts() {
   overlayTitle.textContent = ui[lang].overlayTitle;
   overlayText.textContent = ui[lang].overlayText;
 
-  // manter quebra de linha
   introTitle.innerHTML = ui[lang].introTitle.replace(/\n/g, "<br/>");
   introSub.textContent = ui[lang].introSub;
 
@@ -371,9 +370,14 @@ function resetProgress() {
   updateProgressUI();
   loadCurrentPoint();
 
+  document.body.classList.remove("route-mode");
+
   window.scrollTo({ top: 0, behavior: "smooth" });
   initOverlay();
   setRouteVisible(false);
+
+  // volta a pôr o mapa na intro (se estava no sticky)
+  moveMapToIntro();
 }
 
 resetBtn.addEventListener("click", () => {
@@ -384,9 +388,30 @@ resetBtn.addEventListener("click", () => {
 // ====== MAPA PARTILHADO ======
 let mapIsInSticky = false;
 
+/* ✅ remove qualquer “fallback map.png” que exista no mount
+   (mesmo que não esteja neste snippet, isto evita conflitos no teu projeto real)
+*/
+function removeFallbackMaps(root){
+  if (!root) return;
+  const imgs = root.querySelectorAll('img');
+  imgs.forEach(img => {
+    const src = (img.getAttribute("src") || "").toLowerCase();
+    if (src.includes("map.png") || src.endsWith("/map.png") || src.endsWith("map.png")) {
+      img.remove();
+    }
+    if (img.id === "mapPng" || img.dataset.fallbackMap === "true") {
+      img.remove();
+    }
+  });
+}
+
 function moveMapToSticky(){
   if (!sharedMap || !stickyMapMount) return;
   if (mapIsInSticky) return;
+
+  // limpa qualquer fallback antes de montar o mapa real
+  removeFallbackMaps(stickyMapMount);
+
   stickyMapMount.appendChild(sharedMap);
   mapIsInSticky = true;
 }
@@ -394,11 +419,15 @@ function moveMapToSticky(){
 function moveMapToIntro(){
   if (!sharedMap || !introVisual) return;
   if (!mapIsInSticky) return;
+
+  // limpa fallback também na intro, só por segurança
+  removeFallbackMaps(introVisual);
+
   introVisual.appendChild(sharedMap);
   mapIsInSticky = false;
 }
 
-// FORÇAR ESTADO FINAL DO MAPA (6 layers a 100%)
+// FORÇAR ESTADO FINAL DO MAPA (6 layers a 100% e sem translate)
 function forceMapComplete(){
   for (const layer of introLayers) {
     if (!layer) continue;
@@ -432,37 +461,44 @@ function updateIntroAnimation() {
   introSub.style.opacity = String(c3);
   introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
 
-  // fim da intro -> mostra rota + move mapa
-  const showRoute = scrolled >= 0.93;
-  setRouteVisible(showRoute);
+  // layers animadas
+  const t1 = clamp01((scrolled - 0.08) / 0.14);
+  const t2 = clamp01((scrolled - 0.20) / 0.14);
+  const t3 = clamp01((scrolled - 0.32) / 0.14);
+  const t4 = clamp01((scrolled - 0.44) / 0.14);
+  const t5 = clamp01((scrolled - 0.56) / 0.16);
+  const t6 = clamp01((scrolled - 0.70) / 0.16);
 
-  if (showRoute) {
-    moveMapToSticky();
-    // IMPORTANTÍSSIMO: ao entrar na rota, mapa tem de estar completo (6 layers)
-    forceMapComplete();
-  } else {
-    moveMapToIntro();
-
-    // layers animadas
-    const t1 = clamp01((scrolled - 0.08) / 0.14);
-    const t2 = clamp01((scrolled - 0.20) / 0.14);
-    const t3 = clamp01((scrolled - 0.32) / 0.14);
-    const t4 = clamp01((scrolled - 0.44) / 0.14);
-    const t5 = clamp01((scrolled - 0.56) / 0.16);
-    const t6 = clamp01((scrolled - 0.70) / 0.16);
-
-    layerUpdate(introLayers[0], t1, 2);
-    layerUpdate(introLayers[1], t2, 4);
-    layerUpdate(introLayers[2], t3, 6);
-    layerUpdate(introLayers[3], t4, 8);
-    layerUpdate(introLayers[4], t5, 10);
-    layerUpdate(introLayers[5], t6, 12);
-  }
+  layerUpdate(introLayers[0], t1, 2);
+  layerUpdate(introLayers[1], t2, 4);
+  layerUpdate(introLayers[2], t3, 6);
+  layerUpdate(introLayers[3], t4, 8);
+  layerUpdate(introLayers[4], t5, 10);
+  layerUpdate(introLayers[5], t6, 12);
 
   // hint
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
+  }
+
+  // ✅ fim da intro -> mostra rota + fixa mapa por camadas como sticky
+  const showRoute = scrolled >= 0.93;
+  setRouteVisible(showRoute);
+
+  if (showRoute) {
+    // 1) marca modo rota (CSS colapsa introVisual para não haver buraco)
+    document.body.classList.add("route-mode");
+
+    // 2) move o MESMO mapa para sticky e fixa no estado final
+    moveMapToSticky();
+    forceMapComplete();
+
+    // 3) remove qualquer map.png que esteja a competir
+    removeFallbackMaps(stickyMapMount);
+  } else {
+    document.body.classList.remove("route-mode");
+    moveMapToIntro();
   }
 }
 
