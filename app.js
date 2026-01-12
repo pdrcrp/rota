@@ -95,14 +95,14 @@ const points = [
 // ====== ESTADO ======
 let lang = "pt";
 let currentRequired = 1;
-let audioStarted = false;
 
-let replacingRequiredOrder = null;
-let pendingSubstituteOrder = null;
+// ✅ garante que, depois do fim da intro, NUNCA mais voltamos a trocar o mapa
+let introCompleted = false;
 
-let substitutedRequired = new Set(JSON.parse(localStorage.getItem("substitutedRequired") || "[]"));
-let usedOptionals = new Set(JSON.parse(localStorage.getItem("usedOptionals") || "[]"));
+// next só desbloqueia quando áudio termina
+let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
 
+// persistência do ponto atual
 const saved = localStorage.getItem("currentRequired");
 if (saved) {
   const n = Number(saved);
@@ -110,130 +110,98 @@ if (saved) {
 }
 
 // ====== ELEMENTOS ======
-const stopList = document.getElementById("stopList");
-
-const modalBackdrop = document.getElementById("modalBackdrop");
-const closeModalBtn = document.getElementById("closeModal");
-const continueBtn = document.getElementById("continueBtn");
-const replayBtn = document.getElementById("replayBtn");
+const globalBar = document.getElementById("globalBar");
 
 const progressText = document.getElementById("progressText");
 const progressBar = document.getElementById("progressBar");
 
-const routeWrap = document.getElementById("route");
-const routePins = document.getElementById("routePins");
+const playerKicker = document.getElementById("playerKicker");
+const playerTitle = document.getElementById("playerTitle");
+const playerText = document.getElementById("playerText");
+const playerRouteBar = document.getElementById("playerRouteBar");
+const playerAudioBar = document.getElementById("playerAudioBar");
 
-const modalTitle = document.getElementById("modalTitle");
-const modalType = document.getElementById("modalType");
-const modalText = document.getElementById("modalText");
-const modalAudio = document.getElementById("modalAudio");
-const audioLabel = document.getElementById("audioLabel");
+const prevBtn = document.getElementById("prevBtn");
+const playBtn = document.getElementById("playBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+const playerAudio = document.getElementById("playerAudio");
 
 const resetBtn = document.getElementById("resetBtn");
 const langBtns = [...document.querySelectorAll(".lang-btn")];
-
-// Intro
-const intro = document.getElementById("intro");
-const scrollHint = document.getElementById("scrollHint");
-const scrollOverlay = document.getElementById("scrollOverlay");
-
-// Intro copy
-const introTitle = document.getElementById("introTitle");
-const introSub = document.getElementById("introSub");
-
-// ✅ layers agora vêm do sticky map (um único mapa)
-const introLayers = [
-  document.querySelector(".sticky-map .l1"),
-  document.querySelector(".sticky-map .l2"),
-  document.querySelector(".sticky-map .l3"),
-  document.querySelector(".sticky-map .l4"),
-  document.querySelector(".sticky-map .l5"),
-  document.querySelector(".sticky-map .l6")
-];
 
 const globalTitle = document.getElementById("globalTitle");
 const globalKicker = document.getElementById("globalKicker");
 const overlayTitle = document.getElementById("overlayTitle");
 const overlayText = document.getElementById("overlayText");
-const tracksTitle = document.getElementById("tracksTitle");
-const tracksSub = document.getElementById("tracksSub");
 const footerCopy = document.getElementById("footerCopy");
 
-let openedPoint = null;
+const intro = document.getElementById("intro");
+const scrollHint = document.getElementById("scrollHint");
+const scrollOverlay = document.getElementById("scrollOverlay");
+const introTitle = document.getElementById("introTitle");
+const introSub = document.getElementById("introSub");
+
+const routeWrap = document.getElementById("route");
+
+const stickyMapMount = document.getElementById("stickyMapMount");
+const introVisual = document.getElementById("introVisual");
+const sharedMap = document.getElementById("sharedMap");
+
+const introLayers = [
+  document.querySelector(".intro-map .l1"),
+  document.querySelector(".intro-map .l2"),
+  document.querySelector(".intro-map .l3"),
+  document.querySelector(".intro-map .l4"),
+  document.querySelector(".intro-map .l5"),
+  document.querySelector(".intro-map .l6")
+];
 
 // ====== UI TEXTS ======
 const ui = {
   pt: {
     pageTitle: "Percurso",
     kicker: "Postais por Lisboa",
-    introTitle: "Segue a cidade\nponto a ponto",
-    introSub: "Ouve a história antes de entrar. Avança no percurso ao teu ritmo.",
     overlayTitle: "Bem-vindo ✨",
     overlayText: "Faz scroll para começares a descobrir o mapa",
-    tracksTitle: "Pontos",
-    tracksSub: "Toca num ponto para abrir ou ouvir o áudio.",
+    introTitle: "Segue a cidade\nponto a ponto",
+    introSub: "Ouve a história antes de entrar. Avança no percurso ao teu ritmo.",
     footer: "Postais por Lisboa — percurso interativo",
-
+    nowPlaying: "Ponto atual",
     progress: (n) => `Ponto ${Math.min(n, REQUIRED_TOTAL)} de ${REQUIRED_TOTAL}`,
-    required: "Visita obrigatória",
-    optional: "Alternativa",
-    optionalReplacement: "Alternativa (substitui ponto obrigatório)",
-    audio: "Áudio",
-    continue: "Continuar percurso",
-    replay: "Repetir áudio",
-    lockedHint: "Este ponto ainda está bloqueado.",
-    replaceBtn: (name) => `Substituir por: ${name}`,
-    replaceHint: "Se não quiseres visitar este ponto, podes substituí-lo por uma alternativa.",
-    open: "Abrir",
-    listen: "Ouvir",
-    locked: "Bloqueado",
-    active: "Ativo",
-    done: "Concluído",
-    replaced: "Substituído",
     reset: "Recomeçar",
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)"
   },
   en: {
     pageTitle: "Route",
     kicker: "Postcards from Lisbon",
-    introTitle: "Follow the city\npoint by point",
-    introSub: "Listen before you enter. Move through the route at your own pace.",
     overlayTitle: "Welcome ✨",
     overlayText: "Scroll to start discovering the map",
-    tracksTitle: "Stops",
-    tracksSub: "Tap a stop to open it or play the audio.",
+    introTitle: "Follow the city\npoint by point",
+    introSub: "Listen before you enter. Move through the route at your own pace.",
     footer: "Postcards from Lisbon — interactive route",
-
+    nowPlaying: "Current stop",
     progress: (n) => `Stop ${Math.min(n, REQUIRED_TOTAL)} of ${REQUIRED_TOTAL}`,
-    required: "Required stop",
-    optional: "Alternative",
-    optionalReplacement: "Alternative (replaces a required stop)",
-    audio: "Audio",
-    continue: "Continue route",
-    replay: "Replay audio",
-    lockedHint: "This stop is still locked.",
-    replaceBtn: (name) => `Replace with: ${name}`,
-    replaceHint: "If you don't want to visit this stop, you can replace it with an alternative.",
-    open: "Open",
-    listen: "Listen",
-    locked: "Locked",
-    active: "Active",
-    done: "Done",
-    replaced: "Replaced",
     reset: "Restart",
     resetConfirm: "Restart the route? (This will erase your progress.)"
   }
 };
 
 // ====== HELPERS ======
-function byId(id) { return points.find(p => p.id === id); }
-function saveSets() {
-  localStorage.setItem("substitutedRequired", JSON.stringify([...substitutedRequired]));
-  localStorage.setItem("usedOptionals", JSON.stringify([...usedOptionals]));
-}
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
 
-// ====== VISIBILIDADE DA ROTA ======
+function getRequiredByOrder(order){
+  return points.find(p => p.kind === "required" && p.order === order);
+}
+
+function listenedKeyForRequired(order){
+  return `req-${order}`;
+}
+
+function saveListened(){
+  localStorage.setItem("listenedComplete", JSON.stringify([...listenedComplete]));
+}
+
 function setRouteVisible(visible) {
   if (!routeWrap) return;
   if (visible) {
@@ -245,305 +213,106 @@ function setRouteVisible(visible) {
   }
 }
 
-// ====== PROGRESSO ======
-function getPointState(p) {
-  if (p.kind === "optional") return "active";
-  if (p.order < currentRequired) return "done";
-  if (p.order === currentRequired) return "active";
-  return "locked";
+// ====== HEADER HEIGHT REAL (para não sobrepor a intro) ======
+function syncHeaderHeight(){
+  if (!globalBar) return;
+  const h = Math.ceil(globalBar.getBoundingClientRect().height);
+  document.documentElement.style.setProperty("--headerH", `${h}px`);
 }
+window.addEventListener("resize", syncHeaderHeight);
 
-function updateHeader() {
+// ====== PROGRESSO (global + player-routebar) ======
+function updateProgressUI(){
   progressText.textContent = ui[lang].progress(currentRequired);
+
   const done = Math.max(0, Math.min(REQUIRED_TOTAL, currentRequired - 1));
   const pct = (done / REQUIRED_TOTAL) * 100;
+
   progressBar.style.width = `${pct.toFixed(1)}%`;
+  playerRouteBar.style.width = `${pct.toFixed(1)}%`;
 }
 
-// ====== Alternativas só aparecem no momento certo (6/7) ======
-function optionalIsAvailableNow(optionalPoint) {
-  const replacesOrder = Object.entries(replacementRules).find(([, optId]) => optId === optionalPoint.id);
-  const replacesThis = replacesOrder ? Number(replacesOrder[0]) : null;
-  if (!replacesThis) return false;
-  if (currentRequired === replacesThis) return true;
-  if (usedOptionals.has(optionalPoint.id)) return true;
-  return false;
+// ====== AUDIO PROGRESS BAR ======
+function setAudioBarPct(pct01){
+  const pct = Math.max(0, Math.min(1, pct01)) * 100;
+  playerAudioBar.style.width = `${pct.toFixed(2)}%`;
 }
 
-// ====== MAP PINS (no MESMO mapa) ======
-function renderPins() {
-  if (!routePins) return;
-  routePins.innerHTML = "";
-
-  points.forEach(p => {
-    if (p.kind === "optional" && !optionalIsAvailableNow(p)) return;
-
-    const state = (p.kind === "required") ? getPointState(p) : "active";
-    const isLocked = (p.kind === "required" && state === "locked");
-
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "pin";
-    btn.style.left = `${p.x}%`;
-    btn.style.top = `${p.y}%`;
-    btn.textContent = p.label;
-
-    if (p.kind === "optional") btn.classList.add("is-optional");
-    if (state === "active") btn.classList.add("is-active");
-    if (state === "done") btn.classList.add("is-done");
-    if (isLocked) btn.classList.add("is-locked");
-
-    btn.title = p.title[lang];
-
-    btn.addEventListener("click", () => {
-      if (isLocked) return alert(ui[lang].lockedHint);
-      openModal(p);
-    });
-
-    routePins.appendChild(btn);
-  });
+function resetAudioBar(){
+  setAudioBarPct(0);
 }
 
-// ====== LISTA ======
-function renderStopList() {
-  stopList.innerHTML = "";
-
-  points.forEach(p => {
-    if (p.kind === "optional" && !optionalIsAvailableNow(p)) return;
-
-    const isRequired = p.kind === "required";
-    const state = isRequired ? getPointState(p) : "active";
-
-    const replacesOrder = Object.entries(replacementRules).find(([, optId]) => optId === p.id);
-    const replacesThis = replacesOrder ? Number(replacesOrder[0]) : null;
-
-    const row = document.createElement("div");
-    row.className = "track";
-    if (isRequired && state === "locked") row.classList.add("is-locked");
-
-    const left = document.createElement("div");
-    left.className = "track-left";
-
-    const num = document.createElement("div");
-    num.className = "track-num";
-    num.textContent = p.label;
-
-    const meta = document.createElement("div");
-    meta.className = "track-meta";
-
-    const title = document.createElement("p");
-    title.className = "track-title";
-    title.textContent = p.title[lang];
-
-    const sub = document.createElement("p");
-    sub.className = "track-sub";
-
-    if (isRequired) {
-      sub.textContent =
-        state === "locked" ? ui[lang].locked
-        : state === "active" ? ui[lang].active
-        : (substitutedRequired.has(p.order) ? ui[lang].replaced : ui[lang].done);
-    } else {
-      const base = replacesThis
-        ? (lang === "pt" ? `Alternativa ao ponto ${replacesThis}` : `Alternative to stop ${replacesThis}`)
-        : (lang === "pt" ? "Alternativa" : "Alternative");
-
-      sub.textContent = usedOptionals.has(p.id)
-        ? `${base} • ${ui[lang].done}`
-        : base;
-    }
-
-    meta.appendChild(title);
-    meta.appendChild(sub);
-
-    left.appendChild(num);
-    left.appendChild(meta);
-
-    const right = document.createElement("div");
-    right.className = "track-right";
-
-    const openBtn = document.createElement("button");
-    openBtn.className = "track-btn primary";
-    openBtn.type = "button";
-    openBtn.textContent = ui[lang].open;
-
-    openBtn.addEventListener("click", () => {
-      if (isRequired && state === "locked") return alert(ui[lang].lockedHint);
-      openModal(p);
-    });
-
-    const listenBtn = document.createElement("button");
-    listenBtn.className = "track-btn";
-    listenBtn.type = "button";
-    listenBtn.textContent = ui[lang].listen;
-
-    listenBtn.addEventListener("click", () => {
-      if (isRequired && state === "locked") return alert(ui[lang].lockedHint);
-      openModal(p);
-      setTimeout(() => { modalAudio.play().catch(() => {}); }, 80);
-    });
-
-    right.appendChild(openBtn);
-    right.appendChild(listenBtn);
-
-    row.appendChild(left);
-    row.appendChild(right);
-
-    stopList.appendChild(row);
-  });
-
-  renderPins();
-}
-
-// ====== MODAL ======
-function ensureReplaceUI(container, requiredPoint) {
-  let block = document.getElementById("replaceBlock");
-  if (!block) {
-    block = document.createElement("div");
-    block.id = "replaceBlock";
-    block.style.marginTop = "10px";
-    block.style.padding = "10px";
-    block.style.border = "1px solid rgba(11,13,18,.14)";
-    block.style.borderRadius = "14px";
-    block.style.background = "rgba(255,255,255,.30)";
-    container.appendChild(block);
-  } else block.innerHTML = "";
-
-  const optionalId = replacementRules[requiredPoint.order];
-  const optionalPoint = byId(optionalId);
-  if (!optionalPoint) return;
-
-  const hint = document.createElement("p");
-  hint.style.margin = "0 0 10px";
-  hint.style.color = "rgba(11,13,18,.75)";
-  hint.style.fontSize = "13px";
-  hint.textContent = ui[lang].replaceHint;
-
-  const btn = document.createElement("button");
-  btn.className = "btn secondary";
-  btn.style.width = "100%";
-  btn.textContent = ui[lang].replaceBtn(optionalPoint.title[lang]);
-
-  btn.addEventListener("click", () => {
-    replacingRequiredOrder = requiredPoint.order;
-    pendingSubstituteOrder = requiredPoint.order;
-    openModal(optionalPoint);
-  });
-
-  block.appendChild(hint);
-  block.appendChild(btn);
-}
-
-function openModal(p) {
-  openedPoint = p;
-  audioStarted = false;
-  pendingSubstituteOrder = null;
-
-  modalTitle.textContent = p.title[lang];
-  modalText.textContent = p.text[lang];
-
-  if (p.kind === "optional") {
-    const replacesOrder = Object.entries(replacementRules).find(([, optId]) => optId === p.id);
-    const replacesThis = replacesOrder ? Number(replacesOrder[0]) : null;
-
-    if (replacesThis && replacesThis === currentRequired) {
-      pendingSubstituteOrder = replacesThis;
-      replacingRequiredOrder = replacesThis;
-    }
-  }
-
-  modalType.textContent = (p.kind === "required")
-    ? ui[lang].required
-    : ((replacingRequiredOrder === currentRequired) ? ui[lang].optionalReplacement : ui[lang].optional);
-
-  audioLabel.textContent = ui[lang].audio;
-  replayBtn.textContent = ui[lang].replay;
-  continueBtn.textContent = ui[lang].continue;
-
-  modalAudio.pause();
-  modalAudio.currentTime = 0;
-  modalAudio.innerHTML = "";
-  const src = document.createElement("source");
-  src.src = p.audio[lang];
-  src.type = "audio/mpeg";
-  modalAudio.appendChild(src);
-  modalAudio.load();
-
-  modalAudio.onplay = () => { audioStarted = true; };
-
-  continueBtn.disabled = (p.kind === "optional") && !(replacingRequiredOrder === currentRequired);
-
-  const modalBody = document.querySelector(".modal-body");
-  const existing = document.getElementById("replaceBlock");
-  if (existing) existing.remove();
-
-  if (p.kind === "required" && p.order === currentRequired && replacementRules[p.order]) {
-    ensureReplaceUI(modalBody, p);
-  }
-
-  modalBackdrop.hidden = false;
-}
-
-function closeModal() {
-  modalAudio.pause();
-  modalBackdrop.hidden = true;
-  openedPoint = null;
-  replacingRequiredOrder = null;
-  pendingSubstituteOrder = null;
-}
-
-closeModalBtn.addEventListener("click", closeModal);
-modalBackdrop.addEventListener("click", (e) => {
-  if (e.target === modalBackdrop) closeModal();
+playerAudio.addEventListener("timeupdate", () => {
+  const d = playerAudio.duration;
+  if (!Number.isFinite(d) || d <= 0) return;
+  setAudioBarPct(playerAudio.currentTime / d);
 });
 
-replayBtn.addEventListener("click", () => {
-  modalAudio.currentTime = 0;
-  modalAudio.play().catch(() => {});
+playerAudio.addEventListener("loadedmetadata", () => {
+  const d = playerAudio.duration;
+  if (!Number.isFinite(d) || d <= 0) resetAudioBar();
 });
 
-continueBtn.addEventListener("click", () => {
-  if (!openedPoint) return;
+playerAudio.addEventListener("ended", () => {
+  setAudioBarPct(1);
+  listenedComplete.add(listenedKeyForRequired(currentRequired));
+  saveListened();
+  nextBtn.disabled = false;
+});
 
-  if (!audioStarted) {
-    alert(lang === "pt"
-      ? "Dica: inicia o áudio antes de avançar 🙂"
-      : "Tip: start the audio before continuing 🙂"
-    );
+// ====== PLAYER ======
+function loadCurrentPoint(){
+  const p = getRequiredByOrder(currentRequired);
+  if (!p) return;
+
+  playerKicker.textContent = ui[lang].nowPlaying;
+  playerTitle.textContent = p.title[lang];
+  playerText.textContent = p.text[lang];
+
+  playerAudio.pause();
+  playerAudio.currentTime = 0;
+  resetAudioBar();
+
+  playerAudio.src = p.audio[lang];
+  playerAudio.load();
+
+  prevBtn.disabled = currentRequired <= 1;
+  playBtn.textContent = "▶";
+
+  nextBtn.disabled = !listenedComplete.has(listenedKeyForRequired(currentRequired));
+}
+
+function togglePlay(){
+  if (!playerAudio.src) return;
+
+  if (playerAudio.paused) {
+    playerAudio.play().catch(() => {});
+  } else {
+    playerAudio.pause();
   }
+}
 
-  if (openedPoint.kind === "required") {
-    if (openedPoint.order === currentRequired && currentRequired < REQUIRED_TOTAL) {
-      currentRequired += 1;
-      localStorage.setItem("currentRequired", String(currentRequired));
-    }
-    replacingRequiredOrder = null;
-    pendingSubstituteOrder = null;
-    updateHeader();
-    renderStopList();
-    closeModal();
-    return;
-  }
+playerAudio.addEventListener("play", () => { playBtn.textContent = "❚❚"; });
+playerAudio.addEventListener("pause", () => { playBtn.textContent = "▶"; });
 
-  if (
-    openedPoint.kind === "optional" &&
-    (replacingRequiredOrder === currentRequired || pendingSubstituteOrder === currentRequired)
-  ) {
-    substitutedRequired.add(currentRequired);
-    usedOptionals.add(openedPoint.id);
-    localStorage.setItem("substitutedRequired", JSON.stringify([...substitutedRequired]));
-    localStorage.setItem("usedOptionals", JSON.stringify([...usedOptionals]));
+prevBtn.addEventListener("click", () => {
+  if (currentRequired <= 1) return;
+  currentRequired -= 1;
+  localStorage.setItem("currentRequired", String(currentRequired));
+  updateProgressUI();
+  loadCurrentPoint();
+});
 
-    if (currentRequired < REQUIRED_TOTAL) {
-      currentRequired += 1;
-      localStorage.setItem("currentRequired", String(currentRequired));
-    }
+playBtn.addEventListener("click", togglePlay);
 
-    replacingRequiredOrder = null;
-    pendingSubstituteOrder = null;
-    updateHeader();
-    renderStopList();
-    closeModal();
+nextBtn.addEventListener("click", () => {
+  if (nextBtn.disabled) return;
+
+  if (currentRequired < REQUIRED_TOTAL) {
+    currentRequired += 1;
+    localStorage.setItem("currentRequired", String(currentRequired));
+    updateProgressUI();
+    loadCurrentPoint();
   }
 });
 
@@ -561,11 +330,11 @@ function applyStaticTexts() {
   introTitle.textContent = ui[lang].introTitle;
   introSub.textContent = ui[lang].introSub;
 
-  tracksTitle.textContent = ui[lang].tracksTitle;
-  tracksSub.textContent = ui[lang].tracksSub;
   footerCopy.textContent = ui[lang].footer;
-
   resetBtn.textContent = ui[lang].reset;
+
+  updateProgressUI();
+  loadCurrentPoint();
 }
 
 function setLang(newLang) {
@@ -573,12 +342,9 @@ function setLang(newLang) {
   langBtns.forEach(b =>
     b.setAttribute("aria-pressed", b.dataset.lang === newLang ? "true" : "false")
   );
-
   applyStaticTexts();
-  updateHeader();
-  renderStopList();
-  if (openedPoint) openModal(openedPoint);
 }
+
 langBtns.forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
 // ====== OVERLAY ======
@@ -587,6 +353,7 @@ function initOverlay() {
   scrollOverlay.style.display = "flex";
   scrollOverlay.classList.remove("is-hidden");
 }
+
 function dismissOverlay() {
   if (!scrollOverlay) return;
   if (scrollOverlay.classList.contains("is-hidden")) return;
@@ -597,21 +364,25 @@ function dismissOverlay() {
 // ====== RECOMEÇAR ======
 function resetProgress() {
   localStorage.removeItem("currentRequired");
-  localStorage.removeItem("substitutedRequired");
-  localStorage.removeItem("usedOptionals");
+  localStorage.removeItem("listenedComplete");
 
   currentRequired = 1;
-  substitutedRequired = new Set();
-  usedOptionals = new Set();
-  replacingRequiredOrder = null;
-  pendingSubstituteOrder = null;
+  listenedComplete = new Set();
 
-  closeModal();
-  updateHeader();
-  renderStopList();
+  // ✅ volta a permitir a animação e volta o mapa para a intro
+  introCompleted = false;
+
+  playerAudio.pause();
+  playerAudio.currentTime = 0;
+  resetAudioBar();
+
+  updateProgressUI();
+  loadCurrentPoint();
+
+  // volta o mapa para a intro (para re-animar)
+  moveMapToIntro();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
-
   initOverlay();
   setRouteVisible(false);
 }
@@ -621,7 +392,33 @@ resetBtn.addEventListener("click", () => {
   if (ok) resetProgress();
 });
 
-// ====== INTRO: animação com scroll (no MESMO mapa sticky) ======
+// ====== MAPA PARTILHADO: move o MESMO mapa (/intro) para sticky ======
+let mapIsInSticky = false;
+
+function moveMapToSticky(){
+  if (!sharedMap || !stickyMapMount) return;
+  if (mapIsInSticky) return;
+  stickyMapMount.appendChild(sharedMap);
+  mapIsInSticky = true;
+}
+
+function moveMapToIntro(){
+  if (!sharedMap || !introVisual) return;
+  if (!mapIsInSticky) return;
+  introVisual.appendChild(sharedMap);
+  mapIsInSticky = false;
+}
+
+// ✅ FORÇA o mapa a ficar “completo” (todas as layers visíveis e sem offset)
+function finalizeMapFull(){
+  introLayers.forEach(layer => {
+    if (!layer) return;
+    layer.style.opacity = "1";
+    layer.style.transform = "translate3d(0,0,0)";
+  });
+}
+
+// ====== INTRO: animação com scroll ======
 function layerUpdate(layer, t, depthPx) {
   if (!layer) return;
   layer.style.opacity = String(t);
@@ -630,10 +427,18 @@ function layerUpdate(layer, t, depthPx) {
 }
 
 function updateIntroAnimation() {
+  // ✅ se já completou, não re-calcula animação nem volta a mover mapa -> zero piscar
+  if (introCompleted) {
+    setRouteVisible(true);
+    moveMapToSticky();
+    return;
+  }
+
   const rect = intro.getBoundingClientRect();
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
 
+  // copy
   const c2 = clamp01((scrolled - 0.05) / 0.14);
   const c3 = clamp01((scrolled - 0.10) / 0.16);
 
@@ -643,6 +448,7 @@ function updateIntroAnimation() {
   introSub.style.opacity = String(c3);
   introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
 
+  // layers
   const t1 = clamp01((scrolled - 0.08) / 0.14);
   const t2 = clamp01((scrolled - 0.20) / 0.14);
   const t3 = clamp01((scrolled - 0.32) / 0.14);
@@ -657,18 +463,36 @@ function updateIntroAnimation() {
   layerUpdate(introLayers[4], t5, 10);
   layerUpdate(introLayers[5], t6, 12);
 
+  // hint
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
   }
 
-  // mostra a rota no fim (o mapa é o mesmo, apenas aparecem pins/lista)
-  const showRoute = scrolled >= 0.93;
-  setRouteVisible(showRoute);
-  if (showRoute) renderPins();
+  // ✅ fim da intro: faz ONCE e mantém para sempre
+  const reachedEnd = scrolled >= 0.93;
+
+  if (reachedEnd) {
+    introCompleted = true;
+
+    // mostra route primeiro (para o mount estar pronto)
+    setRouteVisible(true);
+
+    // move o MESMO mapa
+    moveMapToSticky();
+
+    // força mapa completo e sem “meia-animação”
+    finalizeMapFull();
+
+    return;
+  }
+
+  // ainda não acabou: rota escondida + mapa na intro
+  setRouteVisible(false);
+  moveMapToIntro();
 }
 
-// throttle 30fps
+// throttle ~30fps
 let ticking = false;
 let lastFrameTime = 0;
 const FRAME_MS = 33;
@@ -690,17 +514,18 @@ function onScroll(){
 window.addEventListener("scroll", onScroll, { passive: true });
 
 // ====== INIT ======
-modalBackdrop.hidden = true;
+syncHeaderHeight();
 
 applyStaticTexts();
-updateHeader();
-renderStopList();
+updateProgressUI();
+loadCurrentPoint();
 
 setRouteVisible(false);
 initOverlay();
 updateIntroAnimation();
 
 requestAnimationFrame(() => {
+  syncHeaderHeight();
   updateIntroAnimation();
   if (window.scrollY > 6) dismissOverlay();
 });
