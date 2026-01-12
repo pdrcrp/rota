@@ -11,9 +11,9 @@
   <link rel="preload" href="assets/fonts/Simpsonfont%20DEMO.otf" as="font" type="font/otf" crossorigin>
 </head>
 
-<body>
-  <!-- TOP BAR: sempre visível -->
-  <header class="globalbar" id="globalBar">
+<body class="header-hidden">
+  <!-- TOP BAR: aparece só depois do 1º scroll -->
+  <header class="globalbar" id="globalBar" aria-hidden="true">
     <div class="globalbar__left">
       <img class="globalbar__logo" src="assets/logo.png" alt="Postais por Lisboa" />
       <div class="globalbar__titles">
@@ -33,17 +33,25 @@
       </div>
     </div>
 
-    <!-- progresso global (percurso) -->
     <div class="globalbar__progress">
       <p class="subtitle" id="progressText">Ponto 1 de 9</p>
       <div class="progressbar" aria-hidden="true"><span id="progressBar"></span></div>
     </div>
   </header>
 
-  <!-- POPUP/OVERLAY: dica de scroll -->
+  <!-- POPUP/OVERLAY: dica de scroll + idioma -->
   <div class="scroll-overlay" id="scrollOverlay" aria-hidden="false">
-    <div class="scroll-overlay__card">
-      <p class="scroll-overlay__title" id="overlayTitle">Bem-vindo ✨</p>
+    <div class="scroll-overlay__card" role="dialog" aria-modal="true" aria-label="Boas-vindas">
+      <div class="scroll-overlay__top">
+        <p class="scroll-overlay__title" id="overlayTitle">Bem-vindo ✨</p>
+
+        <!-- Botões de idioma dentro do popup -->
+        <div class="overlay-lang" aria-label="Idioma">
+          <button class="lang-btn overlay-lang-btn" data-lang="pt" aria-pressed="true">PT</button>
+          <button class="lang-btn overlay-lang-btn" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+      </div>
+
       <p class="scroll-overlay__text" id="overlayText">Faz scroll para começares a descobrir o mapa</p>
       <div class="scroll-overlay__arrow" aria-hidden="true">↓</div>
     </div>
@@ -60,7 +68,7 @@
           </div>
         </div>
 
-        <!-- INTRO: mapa por camadas -->
+        <!-- MAPA por camadas (SEM sticky / SEM mover) -->
         <div class="intro-visual" id="introVisual">
           <div class="intro-map" id="sharedMap" aria-hidden="true">
             <img class="layer l1" src="assets/intro/01-background.webp" alt="" decoding="async" />
@@ -76,15 +84,9 @@
       </div>
     </section>
 
-    <!-- ROTA -->
+    <!-- ROTA (sem mapa sticky — só o card) -->
     <section class="route chapter" id="routeChapter" aria-label="Rota">
       <main class="route-wrap is-hidden" id="route">
-        <!-- MAPA sticky -->
-        <section class="sticky-map" aria-label="Mapa">
-          <div class="sticky-map__mount" id="stickyMapMount"></div>
-        </section>
-
-        <!-- PLAYER -->
         <section class="player" aria-label="Player do percurso">
           <div class="player-card">
             <div class="player-top">
