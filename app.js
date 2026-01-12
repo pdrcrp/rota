@@ -217,6 +217,12 @@ function syncHeaderHeight(){
   document.documentElement.style.setProperty("--headerH", `${h}px`);
 }
 window.addEventListener("resize", syncHeaderHeight);
+window.addEventListener("orientationchange", syncHeaderHeight);
+// depois de fontes/imagens assentarem
+window.addEventListener("load", () => {
+  syncHeaderHeight();
+  updateIntroAnimation();
+}, { once: true });
 
 // ====== PROGRESSO (global + player-routebar) ======
 function updateProgressUI(){
@@ -275,7 +281,6 @@ function loadCurrentPoint(){
   playerAudio.currentTime = 0;
   resetAudioBar();
 
-  // IMPORTANTE: só usa áudio da pasta /audio e map layers continuam /intro
   playerAudio.src = p.audio[lang];
   playerAudio.load();
 
@@ -334,7 +339,8 @@ function applyStaticTexts() {
   overlayTitle.textContent = ui[lang].overlayTitle;
   overlayText.textContent = ui[lang].overlayText;
 
-  introTitle.textContent = ui[lang].introTitle;
+  // FIX: manter quebra de linha como no HTML (<br/>)
+  introTitle.innerHTML = ui[lang].introTitle.replace(/\n/g, "<br/>");
   introSub.textContent = ui[lang].introSub;
 
   footerCopy.textContent = ui[lang].footer;
@@ -360,12 +366,14 @@ function initOverlay() {
   if (!scrollOverlay) return;
   scrollOverlay.style.display = "flex";
   scrollOverlay.classList.remove("is-hidden");
+  scrollOverlay.setAttribute("aria-hidden", "false");
 }
 
 function dismissOverlay() {
   if (!scrollOverlay) return;
   if (scrollOverlay.classList.contains("is-hidden")) return;
   scrollOverlay.classList.add("is-hidden");
+  scrollOverlay.setAttribute("aria-hidden", "true");
   setTimeout(() => { scrollOverlay.style.display = "none"; }, 260);
 }
 
@@ -422,6 +430,8 @@ function layerUpdate(layer, t, depthPx) {
 }
 
 function updateIntroAnimation() {
+  if (!intro) return;
+
   const rect = intro.getBoundingClientRect();
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
@@ -430,11 +440,15 @@ function updateIntroAnimation() {
   const c2 = clamp01((scrolled - 0.05) / 0.14);
   const c3 = clamp01((scrolled - 0.10) / 0.16);
 
-  introTitle.style.opacity = String(c2);
-  introTitle.style.transform = `translate3d(0, ${(10 - (c2 * 10)).toFixed(2)}px, 0)`;
+  if (introTitle) {
+    introTitle.style.opacity = String(c2);
+    introTitle.style.transform = `translate3d(0, ${(10 - (c2 * 10)).toFixed(2)}px, 0)`;
+  }
 
-  introSub.style.opacity = String(c3);
-  introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
+  if (introSub) {
+    introSub.style.opacity = String(c3);
+    introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
+  }
 
   // layers (/intro apenas)
   const t1 = clamp01((scrolled - 0.08) / 0.14);
