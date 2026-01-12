@@ -1,4 +1,4 @@
-// ====== CONFIGURAÇÃO ======
+// =// ====== CONFIGURAÇÃO ======
 const REQUIRED_TOTAL = 9;
 const replacementRules = { 6: "optA", 7: "optB" };
 
@@ -95,9 +95,6 @@ const points = [
 // ====== ESTADO ======
 let lang = "pt";
 let currentRequired = 1;
-
-// ✅ garante que, depois do fim da intro, NUNCA mais voltamos a trocar o mapa
-let introCompleted = false;
 
 // next só desbloqueia quando áudio termina
 let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
@@ -242,17 +239,20 @@ function resetAudioBar(){
   setAudioBarPct(0);
 }
 
+// atualiza em tempo real (barra fininha do áudio)
 playerAudio.addEventListener("timeupdate", () => {
   const d = playerAudio.duration;
   if (!Number.isFinite(d) || d <= 0) return;
   setAudioBarPct(playerAudio.currentTime / d);
 });
 
+// quando carrega metadata (para evitar “saltos”)
 playerAudio.addEventListener("loadedmetadata", () => {
   const d = playerAudio.duration;
   if (!Number.isFinite(d) || d <= 0) resetAudioBar();
 });
 
+// quando termina: barra a 100%
 playerAudio.addEventListener("ended", () => {
   setAudioBarPct(1);
   listenedComplete.add(listenedKeyForRequired(currentRequired));
@@ -265,20 +265,25 @@ function loadCurrentPoint(){
   const p = getRequiredByOrder(currentRequired);
   if (!p) return;
 
+  // textos
   playerKicker.textContent = ui[lang].nowPlaying;
   playerTitle.textContent = p.title[lang];
   playerText.textContent = p.text[lang];
 
+  // áudio
   playerAudio.pause();
   playerAudio.currentTime = 0;
   resetAudioBar();
 
+  // IMPORTANTE: só usa áudio da pasta /audio e map layers continuam /intro
   playerAudio.src = p.audio[lang];
   playerAudio.load();
 
+  // botões
   prevBtn.disabled = currentRequired <= 1;
   playBtn.textContent = "▶";
 
+  // next bloqueado até ouvir completo
   nextBtn.disabled = !listenedComplete.has(listenedKeyForRequired(currentRequired));
 }
 
@@ -292,9 +297,11 @@ function togglePlay(){
   }
 }
 
+// ícone play/pause
 playerAudio.addEventListener("play", () => { playBtn.textContent = "❚❚"; });
 playerAudio.addEventListener("pause", () => { playBtn.textContent = "▶"; });
 
+// controlos
 prevBtn.addEventListener("click", () => {
   if (currentRequired <= 1) return;
   currentRequired -= 1;
@@ -316,7 +323,7 @@ nextBtn.addEventListener("click", () => {
   }
 });
 
-// ====== IDIOMA ======
+// ====== IDIOMA (aplica ao site todo) ======
 function applyStaticTexts() {
   document.documentElement.lang = lang;
   document.title = ui[lang].pageTitle;
@@ -331,6 +338,7 @@ function applyStaticTexts() {
   introSub.textContent = ui[lang].introSub;
 
   footerCopy.textContent = ui[lang].footer;
+
   resetBtn.textContent = ui[lang].reset;
 
   updateProgressUI();
@@ -369,18 +377,12 @@ function resetProgress() {
   currentRequired = 1;
   listenedComplete = new Set();
 
-  // ✅ volta a permitir a animação e volta o mapa para a intro
-  introCompleted = false;
-
   playerAudio.pause();
   playerAudio.currentTime = 0;
   resetAudioBar();
 
   updateProgressUI();
   loadCurrentPoint();
-
-  // volta o mapa para a intro (para re-animar)
-  moveMapToIntro();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
   initOverlay();
@@ -398,6 +400,7 @@ let mapIsInSticky = false;
 function moveMapToSticky(){
   if (!sharedMap || !stickyMapMount) return;
   if (mapIsInSticky) return;
+
   stickyMapMount.appendChild(sharedMap);
   mapIsInSticky = true;
 }
@@ -405,17 +408,9 @@ function moveMapToSticky(){
 function moveMapToIntro(){
   if (!sharedMap || !introVisual) return;
   if (!mapIsInSticky) return;
+
   introVisual.appendChild(sharedMap);
   mapIsInSticky = false;
-}
-
-// ✅ FORÇA o mapa a ficar “completo” (todas as layers visíveis e sem offset)
-function finalizeMapFull(){
-  introLayers.forEach(layer => {
-    if (!layer) return;
-    layer.style.opacity = "1";
-    layer.style.transform = "translate3d(0,0,0)";
-  });
 }
 
 // ====== INTRO: animação com scroll ======
@@ -427,13 +422,6 @@ function layerUpdate(layer, t, depthPx) {
 }
 
 function updateIntroAnimation() {
-  // ✅ se já completou, não re-calcula animação nem volta a mover mapa -> zero piscar
-  if (introCompleted) {
-    setRouteVisible(true);
-    moveMapToSticky();
-    return;
-  }
-
   const rect = intro.getBoundingClientRect();
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
@@ -448,7 +436,7 @@ function updateIntroAnimation() {
   introSub.style.opacity = String(c3);
   introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
 
-  // layers
+  // layers (/intro apenas)
   const t1 = clamp01((scrolled - 0.08) / 0.14);
   const t2 = clamp01((scrolled - 0.20) / 0.14);
   const t3 = clamp01((scrolled - 0.32) / 0.14);
@@ -469,27 +457,12 @@ function updateIntroAnimation() {
     scrollHint.style.opacity = String(1 - tHint);
   }
 
-  // ✅ fim da intro: faz ONCE e mantém para sempre
-  const reachedEnd = scrolled >= 0.93;
+  // fim da intro -> mostra rota + move o MESMO mapa (sem trocar imagens)
+  const showRoute = scrolled >= 0.93;
+  setRouteVisible(showRoute);
 
-  if (reachedEnd) {
-    introCompleted = true;
-
-    // mostra route primeiro (para o mount estar pronto)
-    setRouteVisible(true);
-
-    // move o MESMO mapa
-    moveMapToSticky();
-
-    // força mapa completo e sem “meia-animação”
-    finalizeMapFull();
-
-    return;
-  }
-
-  // ainda não acabou: rota escondida + mapa na intro
-  setRouteVisible(false);
-  moveMapToIntro();
+  if (showRoute) moveMapToSticky();
+  else moveMapToIntro();
 }
 
 // throttle ~30fps
@@ -529,3 +502,4 @@ requestAnimationFrame(() => {
   updateIntroAnimation();
   if (window.scrollY > 6) dismissOverlay();
 });
+
