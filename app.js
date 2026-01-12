@@ -1,4 +1,4 @@
-// =// ====== CONFIGURAÇÃO ======
+// ====== CONFIGURAÇÃO ======
 const REQUIRED_TOTAL = 9;
 const replacementRules = { 6: "optA", 7: "optB" };
 
@@ -502,4 +502,3 @@ requestAnimationFrame(() => {
   updateIntroAnimation();
   if (window.scrollY > 6) dismissOverlay();
 });
-
