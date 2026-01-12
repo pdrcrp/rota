@@ -10,7 +10,7 @@
   <link rel="preload" href="assets/fonts/Aileron-Regular.otf" as="font" type="font/otf" crossorigin>
   <link rel="preload" href="assets/fonts/Simpsonfont%20DEMO.otf" as="font" type="font/otf" crossorigin>
 
-  <!-- Preload das imagens do mapa (evita “piscar”/flash ao entrar na rota) -->
+  <!-- Preload do mapa (evita flash) -->
   <link rel="preload" as="image" href="assets/intro/01-background.webp">
   <link rel="preload" as="image" href="assets/intro/02-ruas.webp">
   <link rel="preload" as="image" href="assets/intro/03-elementos.webp">
@@ -20,7 +20,7 @@
 </head>
 
 <body>
-  <!-- TOP BAR: sempre visível -->
+  <!-- TOP BAR -->
   <header class="globalbar" id="globalBar">
     <div class="globalbar__left">
       <img class="globalbar__logo" src="assets/logo.png" alt="Postais por Lisboa" />
@@ -47,7 +47,7 @@
     </div>
   </header>
 
-  <!-- POPUP/OVERLAY: dica de scroll -->
+  <!-- OVERLAY: dica de scroll -->
   <div class="scroll-overlay" id="scrollOverlay" aria-hidden="false">
     <div class="scroll-overlay__card">
       <p class="scroll-overlay__title" id="overlayTitle">Bem-vindo ✨</p>
@@ -56,26 +56,29 @@
     </div>
   </div>
 
+  <!-- ✅ ÚNICO MAPA (serve para intro + rota) -->
+  <div class="sticky-map-shell" id="stickyMapShell" aria-label="Mapa">
+    <div class="sticky-map" id="stickyMap" aria-hidden="true">
+      <img class="layer l1" src="assets/intro/01-background.webp" alt="" decoding="async" />
+      <img class="layer l2" src="assets/intro/02-ruas.webp" alt="" decoding="async" />
+      <img class="layer l3" src="assets/intro/03-elementos.webp" alt="" decoding="async" />
+      <img class="layer l4" src="assets/intro/04-percurso.webp" alt="" decoding="async" />
+      <img class="layer l5" src="assets/intro/05-icones.webp" alt="" decoding="async" />
+      <img class="layer l6" src="assets/intro/06-nomes.webp" alt="" decoding="async" />
+
+      <!-- pins injectados por JS -->
+      <div class="sticky-map__pins" id="routePins" aria-label="Marcadores"></div>
+    </div>
+  </div>
+
   <div class="chapters">
-    <!-- INTRO -->
+    <!-- INTRO (agora só texto; o mapa já está sticky acima) -->
     <section class="intro chapter" id="intro" aria-label="Introdução">
       <div class="intro-sticky">
         <div class="intro-top">
           <div class="intro-copy" aria-hidden="true">
             <h2 class="intro-title" id="introTitle">Segue a cidade<br/>ponto a ponto</h2>
             <p class="intro-sub" id="introSub">Ouve a história antes de entrar. Avança no percurso ao teu ritmo.</p>
-          </div>
-        </div>
-
-        <!-- INTRO: mapa por camadas -->
-        <div class="intro-visual">
-          <div class="intro-map" aria-hidden="true">
-            <img class="layer l1" src="assets/intro/01-background.webp" alt="" decoding="async" />
-            <img class="layer l2" src="assets/intro/02-ruas.webp" alt="" decoding="async" />
-            <img class="layer l3" src="assets/intro/03-elementos.webp" alt="" decoding="async" />
-            <img class="layer l4" src="assets/intro/04-percurso.webp" alt="" decoding="async" />
-            <img class="layer l5" src="assets/intro/05-icones.webp" alt="" decoding="async" />
-            <img class="layer l6" src="assets/intro/06-nomes.webp" alt="" decoding="async" />
           </div>
         </div>
 
@@ -86,20 +89,6 @@
     <!-- ROTA -->
     <section class="route chapter" id="routeChapter" aria-label="Rota">
       <main class="route-wrap is-hidden" id="route">
-        <!-- MAPA sticky (visual IGUAL ao final da intro, sem “card”) -->
-        <section class="route-map-sticky" aria-label="Mapa">
-          <div class="route-map" id="routeMap" aria-hidden="false">
-            <img class="route-map__layer" src="assets/intro/01-background.webp" alt="" decoding="async" />
-            <img class="route-map__layer" src="assets/intro/02-ruas.webp" alt="" decoding="async" />
-            <img class="route-map__layer" src="assets/intro/03-elementos.webp" alt="" decoding="async" />
-            <img class="route-map__layer" src="assets/intro/04-percurso.webp" alt="" decoding="async" />
-            <img class="route-map__layer" src="assets/intro/05-icones.webp" alt="" decoding="async" />
-            <img class="route-map__layer" src="assets/intro/06-nomes.webp" alt="" decoding="async" />
-
-            <div class="route-map__pins" id="routePins" aria-label="Marcadores"></div>
-          </div>
-        </section>
-
         <section class="tracks" aria-label="Lista de pontos">
           <div class="tracks-head">
             <h3 class="tracks-title" id="tracksTitle">Pontos</h3>
