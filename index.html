@@ -40,7 +40,7 @@
     </div>
   </header>
 
-  <!-- POPUP/OVERLAY: dica de scroll (aparece sempre ao abrir/refresh) -->
+  <!-- POPUP/OVERLAY: dica de scroll -->
   <div class="scroll-overlay" id="scrollOverlay" aria-hidden="false">
     <div class="scroll-overlay__card">
       <p class="scroll-overlay__title" id="overlayTitle">Bem-vindo ✨</p>
@@ -60,7 +60,7 @@
           </div>
         </div>
 
-        <!-- INTRO: mapa por camadas (full width) -->
+        <!-- INTRO: mapa por camadas -->
         <div class="intro-visual" id="introVisual">
           <div class="intro-map" id="sharedMap" aria-hidden="true">
             <img class="layer l1" src="assets/intro/01-background.webp" alt="" decoding="async" />
@@ -79,12 +79,12 @@
     <!-- ROTA -->
     <section class="route chapter" id="routeChapter" aria-label="Rota">
       <main class="route-wrap is-hidden" id="route">
-        <!-- MESMO MAPA da intro em sticky (sem duplicar) -->
+        <!-- MAPA sticky -->
         <section class="sticky-map" aria-label="Mapa">
           <div class="sticky-map__mount" id="stickyMapMount"></div>
         </section>
 
-        <!-- PLAYER estilo Spotify (só 1 ponto visível) -->
+        <!-- PLAYER -->
         <section class="player" aria-label="Player do percurso">
           <div class="player-card">
             <div class="player-top">
@@ -92,7 +92,6 @@
                 <p class="player-kicker" id="playerKicker">Ponto atual</p>
                 <h3 class="player-title" id="playerTitle">—</h3>
 
-                <!-- barra do progresso do percurso (baixo do nome) -->
                 <div class="player-routebar" aria-hidden="true">
                   <span id="playerRouteBar"></span>
                 </div>
@@ -105,12 +104,10 @@
               </div>
             </div>
 
-            <!-- barra fininha do progresso do ÁUDIO (separada da do percurso) -->
             <div class="player-audiobar" aria-hidden="true">
               <span id="playerAudioBar"></span>
             </div>
 
-            <!-- áudio real (sem controls visíveis; controlamos via botões) -->
             <audio id="playerAudio" preload="metadata"></audio>
 
             <div class="player-bottom">
