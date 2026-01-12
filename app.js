@@ -1,6 +1,15 @@
-// =// ====== CONFIGURAÇÃO ======
+// ====== CONFIGURAÇÃO ======
 const REQUIRED_TOTAL = 9;
 const replacementRules = { 6: "optA", 7: "optB" };
+
+const MAP_SRCS = [
+  "assets/intro/01-background.webp",
+  "assets/intro/02-ruas.webp",
+  "assets/intro/03-elementos.webp",
+  "assets/intro/04-percurso.webp",
+  "assets/intro/05-icones.webp",
+  "assets/intro/06-nomes.webp",
+];
 
 const points = [
   { id:"p1", kind:"required", order:1, label:"1", x:18, y:22,
@@ -95,55 +104,53 @@ const points = [
 // ====== ESTADO ======
 let lang = "pt";
 let currentRequired = 1;
+let audioStarted = false;
 
-// next só desbloqueia quando áudio termina
-let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
+let replacingRequiredOrder = null;
+let pendingSubstituteOrder = null;
 
-// persistência do ponto atual
+let substitutedRequired = new Set(JSON.parse(localStorage.getItem("substitutedRequired") || "[]"));
+let usedOptionals = new Set(JSON.parse(localStorage.getItem("usedOptionals") || "[]"));
+
 const saved = localStorage.getItem("currentRequired");
 if (saved) {
   const n = Number(saved);
   if (Number.isFinite(n) && n >= 1 && n <= REQUIRED_TOTAL) currentRequired = n;
 }
 
+// ✅ Anti-piscar: só mostramos a rota quando o mapa estiver carregado
+let mapReady = false;
+
 // ====== ELEMENTOS ======
-const globalBar = document.getElementById("globalBar");
+const stopList = document.getElementById("stopList");
+
+const modalBackdrop = document.getElementById("modalBackdrop");
+const closeModalBtn = document.getElementById("closeModal");
+const continueBtn = document.getElementById("continueBtn");
+const replayBtn = document.getElementById("replayBtn");
 
 const progressText = document.getElementById("progressText");
 const progressBar = document.getElementById("progressBar");
 
-const playerKicker = document.getElementById("playerKicker");
-const playerTitle = document.getElementById("playerTitle");
-const playerText = document.getElementById("playerText");
-const playerRouteBar = document.getElementById("playerRouteBar");
-const playerAudioBar = document.getElementById("playerAudioBar");
+const routeWrap = document.getElementById("route");
+const routePins = document.getElementById("routePins");
 
-const prevBtn = document.getElementById("prevBtn");
-const playBtn = document.getElementById("playBtn");
-const nextBtn = document.getElementById("nextBtn");
-
-const playerAudio = document.getElementById("playerAudio");
+const modalTitle = document.getElementById("modalTitle");
+const modalType = document.getElementById("modalType");
+const modalText = document.getElementById("modalText");
+const modalAudio = document.getElementById("modalAudio");
+const audioLabel = document.getElementById("audioLabel");
 
 const resetBtn = document.getElementById("resetBtn");
 const langBtns = [...document.querySelectorAll(".lang-btn")];
 
-const globalTitle = document.getElementById("globalTitle");
-const globalKicker = document.getElementById("globalKicker");
-const overlayTitle = document.getElementById("overlayTitle");
-const overlayText = document.getElementById("overlayText");
-const footerCopy = document.getElementById("footerCopy");
-
+// Intro
 const intro = document.getElementById("intro");
 const scrollHint = document.getElementById("scrollHint");
 const scrollOverlay = document.getElementById("scrollOverlay");
+
 const introTitle = document.getElementById("introTitle");
 const introSub = document.getElementById("introSub");
-
-const routeWrap = document.getElementById("route");
-
-const stickyMapMount = document.getElementById("stickyMapMount");
-const introVisual = document.getElementById("introVisual");
-const sharedMap = document.getElementById("sharedMap");
 
 const introLayers = [
   document.querySelector(".intro-map .l1"),
@@ -154,53 +161,104 @@ const introLayers = [
   document.querySelector(".intro-map .l6")
 ];
 
+const globalTitle = document.getElementById("globalTitle");
+const globalKicker = document.getElementById("globalKicker");
+const overlayTitle = document.getElementById("overlayTitle");
+const overlayText = document.getElementById("overlayText");
+const tracksTitle = document.getElementById("tracksTitle");
+const tracksSub = document.getElementById("tracksSub");
+const footerCopy = document.getElementById("footerCopy");
+
+let openedPoint = null;
+
 // ====== UI TEXTS ======
 const ui = {
   pt: {
     pageTitle: "Percurso",
     kicker: "Postais por Lisboa",
-    overlayTitle: "Bem-vindo ✨",
-    overlayText: "Faz scroll para começares a descobrir o mapa",
     introTitle: "Segue a cidade\nponto a ponto",
     introSub: "Ouve a história antes de entrar. Avança no percurso ao teu ritmo.",
+    overlayTitle: "Bem-vindo ✨",
+    overlayText: "Faz scroll para começares a descobrir o mapa",
+    tracksTitle: "Pontos",
+    tracksSub: "Toca num ponto para abrir ou ouvir o áudio.",
     footer: "Postais por Lisboa — percurso interativo",
-    nowPlaying: "Ponto atual",
+
     progress: (n) => `Ponto ${Math.min(n, REQUIRED_TOTAL)} de ${REQUIRED_TOTAL}`,
+    required: "Visita obrigatória",
+    optional: "Alternativa",
+    optionalReplacement: "Alternativa (substitui ponto obrigatório)",
+    audio: "Áudio",
+    continue: "Continuar percurso",
+    replay: "Repetir áudio",
+    lockedHint: "Este ponto ainda está bloqueado.",
+    replaceBtn: (name) => `Substituir por: ${name}`,
+    replaceHint: "Se não quiseres visitar este ponto, podes substituí-lo por uma alternativa.",
+    open: "Abrir",
+    listen: "Ouvir",
+    locked: "Bloqueado",
+    active: "Ativo",
+    done: "Concluído",
+    replaced: "Substituído",
     reset: "Recomeçar",
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)"
   },
   en: {
     pageTitle: "Route",
     kicker: "Postcards from Lisbon",
-    overlayTitle: "Welcome ✨",
-    overlayText: "Scroll to start discovering the map",
     introTitle: "Follow the city\npoint by point",
     introSub: "Listen before you enter. Move through the route at your own pace.",
+    overlayTitle: "Welcome ✨",
+    overlayText: "Scroll to start discovering the map",
+    tracksTitle: "Stops",
+    tracksSub: "Tap a stop to open it or play the audio.",
     footer: "Postcards from Lisbon — interactive route",
-    nowPlaying: "Current stop",
+
     progress: (n) => `Stop ${Math.min(n, REQUIRED_TOTAL)} of ${REQUIRED_TOTAL}`,
+    required: "Required stop",
+    optional: "Alternative",
+    optionalReplacement: "Alternative (replaces a required stop)",
+    audio: "Audio",
+    continue: "Continue route",
+    replay: "Replay audio",
+    lockedHint: "This stop is still locked.",
+    replaceBtn: (name) => `Replace with: ${name}`,
+    replaceHint: "If you don't want to visit this stop, you can replace it with an alternative.",
+    open: "Open",
+    listen: "Listen",
+    locked: "Locked",
+    active: "Active",
+    done: "Done",
+    replaced: "Replaced",
     reset: "Restart",
     resetConfirm: "Restart the route? (This will erase your progress.)"
   }
 };
 
 // ====== HELPERS ======
+function byId(id) { return points.find(p => p.id === id); }
+function saveSets() {
+  localStorage.setItem("substitutedRequired", JSON.stringify([...substitutedRequired]));
+  localStorage.setItem("usedOptionals", JSON.stringify([...usedOptionals]));
+}
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
 
-function getRequiredByOrder(order){
-  return points.find(p => p.kind === "required" && p.order === order);
+function preloadImages(urls){
+  return Promise.all(urls.map(src => new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
+  })));
 }
 
-function listenedKeyForRequired(order){
-  return `req-${order}`;
-}
-
-function saveListened(){
-  localStorage.setItem("listenedComplete", JSON.stringify([...listenedComplete]));
-}
-
+// ====== VISIBILIDADE DA ROTA ======
 function setRouteVisible(visible) {
   if (!routeWrap) return;
+
+  // ✅ Só mostra a rota se o mapa estiver pronto
+  if (visible && !mapReady) return;
+
   if (visible) {
     routeWrap.classList.remove("is-hidden");
     routeWrap.classList.add("is-shown");
@@ -210,120 +268,308 @@ function setRouteVisible(visible) {
   }
 }
 
-// ====== HEADER HEIGHT REAL (para não sobrepor a intro) ======
-function syncHeaderHeight(){
-  if (!globalBar) return;
-  const h = Math.ceil(globalBar.getBoundingClientRect().height);
-  document.documentElement.style.setProperty("--headerH", `${h}px`);
+// ====== PROGRESSO ======
+function getPointState(p) {
+  if (p.kind === "optional") return "active";
+  if (p.order < currentRequired) return "done";
+  if (p.order === currentRequired) return "active";
+  return "locked";
 }
-window.addEventListener("resize", syncHeaderHeight);
 
-// ====== PROGRESSO (global + player-routebar) ======
-function updateProgressUI(){
+function updateHeader() {
   progressText.textContent = ui[lang].progress(currentRequired);
-
   const done = Math.max(0, Math.min(REQUIRED_TOTAL, currentRequired - 1));
   const pct = (done / REQUIRED_TOTAL) * 100;
-
   progressBar.style.width = `${pct.toFixed(1)}%`;
-  playerRouteBar.style.width = `${pct.toFixed(1)}%`;
 }
 
-// ====== AUDIO PROGRESS BAR ======
-function setAudioBarPct(pct01){
-  const pct = Math.max(0, Math.min(1, pct01)) * 100;
-  playerAudioBar.style.width = `${pct.toFixed(2)}%`;
+// ====== Alternativas só aparecem no momento certo (6/7) ======
+function optionalIsAvailableNow(optionalPoint) {
+  const replacesOrder = Object.entries(replacementRules).find(([, optId]) => optId === optionalPoint.id);
+  const replacesThis = replacesOrder ? Number(replacesOrder[0]) : null;
+  if (!replacesThis) return false;
+  if (currentRequired === replacesThis) return true;
+  if (usedOptionals.has(optionalPoint.id)) return true;
+  return false;
 }
 
-function resetAudioBar(){
-  setAudioBarPct(0);
+// ====== MAP PINS ======
+function renderPins() {
+  if (!routePins) return;
+  routePins.innerHTML = "";
+
+  points.forEach(p => {
+    if (p.kind === "optional" && !optionalIsAvailableNow(p)) return;
+
+    const state = (p.kind === "required") ? getPointState(p) : "active";
+    const isLocked = (p.kind === "required" && state === "locked");
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pin";
+    btn.style.left = `${p.x}%`;
+    btn.style.top = `${p.y}%`;
+    btn.textContent = p.label;
+
+    if (p.kind === "optional") btn.classList.add("is-optional");
+    if (state === "active") btn.classList.add("is-active");
+    if (state === "done") btn.classList.add("is-done");
+    if (isLocked) btn.classList.add("is-locked");
+
+    btn.title = p.title[lang];
+
+    btn.addEventListener("click", () => {
+      if (isLocked) return alert(ui[lang].lockedHint);
+      openModal(p);
+    });
+
+    routePins.appendChild(btn);
+  });
 }
 
-// atualiza em tempo real (barra fininha do áudio)
-playerAudio.addEventListener("timeupdate", () => {
-  const d = playerAudio.duration;
-  if (!Number.isFinite(d) || d <= 0) return;
-  setAudioBarPct(playerAudio.currentTime / d);
-});
+// ====== LISTA ======
+function renderStopList() {
+  stopList.innerHTML = "";
 
-// quando carrega metadata (para evitar “saltos”)
-playerAudio.addEventListener("loadedmetadata", () => {
-  const d = playerAudio.duration;
-  if (!Number.isFinite(d) || d <= 0) resetAudioBar();
-});
+  points.forEach(p => {
+    if (p.kind === "optional" && !optionalIsAvailableNow(p)) return;
 
-// quando termina: barra a 100%
-playerAudio.addEventListener("ended", () => {
-  setAudioBarPct(1);
-  listenedComplete.add(listenedKeyForRequired(currentRequired));
-  saveListened();
-  nextBtn.disabled = false;
-});
+    const isRequired = p.kind === "required";
+    const state = isRequired ? getPointState(p) : "active";
 
-// ====== PLAYER ======
-function loadCurrentPoint(){
-  const p = getRequiredByOrder(currentRequired);
-  if (!p) return;
+    const replacesOrder = Object.entries(replacementRules).find(([, optId]) => optId === p.id);
+    const replacesThis = replacesOrder ? Number(replacesOrder[0]) : null;
 
-  // textos
-  playerKicker.textContent = ui[lang].nowPlaying;
-  playerTitle.textContent = p.title[lang];
-  playerText.textContent = p.text[lang];
+    const row = document.createElement("div");
+    row.className = "track";
+    if (isRequired && state === "locked") row.classList.add("is-locked");
 
-  // áudio
-  playerAudio.pause();
-  playerAudio.currentTime = 0;
-  resetAudioBar();
+    const left = document.createElement("div");
+    left.className = "track-left";
 
-  // IMPORTANTE: só usa áudio da pasta /audio e map layers continuam /intro
-  playerAudio.src = p.audio[lang];
-  playerAudio.load();
+    const num = document.createElement("div");
+    num.className = "track-num";
+    num.textContent = p.label;
 
-  // botões
-  prevBtn.disabled = currentRequired <= 1;
-  playBtn.textContent = "▶";
+    const meta = document.createElement("div");
+    meta.className = "track-meta";
 
-  // next bloqueado até ouvir completo
-  nextBtn.disabled = !listenedComplete.has(listenedKeyForRequired(currentRequired));
+    const title = document.createElement("p");
+    title.className = "track-title";
+    title.textContent = p.title[lang];
+
+    const sub = document.createElement("p");
+    sub.className = "track-sub";
+
+    if (isRequired) {
+      sub.textContent =
+        state === "locked" ? ui[lang].locked
+        : state === "active" ? ui[lang].active
+        : (substitutedRequired.has(p.order) ? ui[lang].replaced : ui[lang].done);
+    } else {
+      const base = replacesThis
+        ? (lang === "pt" ? `Alternativa ao ponto ${replacesThis}` : `Alternative to stop ${replacesThis}`)
+        : (lang === "pt" ? "Alternativa" : "Alternative");
+
+      sub.textContent = usedOptionals.has(p.id)
+        ? `${base} • ${ui[lang].done}`
+        : base;
+    }
+
+    meta.appendChild(title);
+    meta.appendChild(sub);
+
+    left.appendChild(num);
+    left.appendChild(meta);
+
+    const right = document.createElement("div");
+    right.className = "track-right";
+
+    const openBtn = document.createElement("button");
+    openBtn.className = "track-btn primary";
+    openBtn.type = "button";
+    openBtn.textContent = ui[lang].open;
+
+    openBtn.addEventListener("click", () => {
+      if (isRequired && state === "locked") return alert(ui[lang].lockedHint);
+      openModal(p);
+    });
+
+    const listenBtn = document.createElement("button");
+    listenBtn.className = "track-btn";
+    listenBtn.type = "button";
+    listenBtn.textContent = ui[lang].listen;
+
+    listenBtn.addEventListener("click", () => {
+      if (isRequired && state === "locked") return alert(ui[lang].lockedHint);
+      openModal(p);
+      setTimeout(() => { modalAudio.play().catch(() => {}); }, 80);
+    });
+
+    right.appendChild(openBtn);
+    right.appendChild(listenBtn);
+
+    row.appendChild(left);
+    row.appendChild(right);
+
+    stopList.appendChild(row);
+  });
+
+  renderPins();
 }
 
-function togglePlay(){
-  if (!playerAudio.src) return;
+// ====== MODAL ======
+function ensureReplaceUI(container, requiredPoint) {
+  let block = document.getElementById("replaceBlock");
+  if (!block) {
+    block = document.createElement("div");
+    block.id = "replaceBlock";
+    block.style.marginTop = "10px";
+    block.style.padding = "10px";
+    block.style.border = "1px solid rgba(11,13,18,.14)";
+    block.style.borderRadius = "14px";
+    block.style.background = "rgba(255,255,255,.30)";
+    container.appendChild(block);
+  } else block.innerHTML = "";
 
-  if (playerAudio.paused) {
-    playerAudio.play().catch(() => {});
-  } else {
-    playerAudio.pause();
+  const optionalId = replacementRules[requiredPoint.order];
+  const optionalPoint = byId(optionalId);
+  if (!optionalPoint) return;
+
+  const hint = document.createElement("p");
+  hint.style.margin = "0 0 10px";
+  hint.style.color = "rgba(11,13,18,.75)";
+  hint.style.fontSize = "13px";
+  hint.textContent = ui[lang].replaceHint;
+
+  const btn = document.createElement("button");
+  btn.className = "btn secondary";
+  btn.style.width = "100%";
+  btn.textContent = ui[lang].replaceBtn(optionalPoint.title[lang]);
+
+  btn.addEventListener("click", () => {
+    replacingRequiredOrder = requiredPoint.order;
+    pendingSubstituteOrder = requiredPoint.order;
+    openModal(optionalPoint);
+  });
+
+  block.appendChild(hint);
+  block.appendChild(btn);
+}
+
+function openModal(p) {
+  openedPoint = p;
+  audioStarted = false;
+  pendingSubstituteOrder = null;
+
+  modalTitle.textContent = p.title[lang];
+  modalText.textContent = p.text[lang];
+
+  if (p.kind === "optional") {
+    const replacesOrder = Object.entries(replacementRules).find(([, optId]) => optId === p.id);
+    const replacesThis = replacesOrder ? Number(replacesOrder[0]) : null;
+
+    if (replacesThis && replacesThis === currentRequired) {
+      pendingSubstituteOrder = replacesThis;
+      replacingRequiredOrder = replacesThis;
+    }
   }
+
+  modalType.textContent = (p.kind === "required")
+    ? ui[lang].required
+    : ((replacingRequiredOrder === currentRequired) ? ui[lang].optionalReplacement : ui[lang].optional);
+
+  audioLabel.textContent = ui[lang].audio;
+  replayBtn.textContent = ui[lang].replay;
+  continueBtn.textContent = ui[lang].continue;
+
+  modalAudio.pause();
+  modalAudio.currentTime = 0;
+  modalAudio.innerHTML = "";
+  const src = document.createElement("source");
+  src.src = p.audio[lang];
+  src.type = "audio/mpeg";
+  modalAudio.appendChild(src);
+  modalAudio.load();
+
+  modalAudio.onplay = () => { audioStarted = true; };
+
+  continueBtn.disabled = (p.kind === "optional") && !(replacingRequiredOrder === currentRequired);
+
+  const modalBody = document.querySelector(".modal-body");
+  const existing = document.getElementById("replaceBlock");
+  if (existing) existing.remove();
+
+  if (p.kind === "required" && p.order === currentRequired && replacementRules[p.order]) {
+    ensureReplaceUI(modalBody, p);
+  }
+
+  modalBackdrop.hidden = false;
 }
 
-// ícone play/pause
-playerAudio.addEventListener("play", () => { playBtn.textContent = "❚❚"; });
-playerAudio.addEventListener("pause", () => { playBtn.textContent = "▶"; });
+function closeModal() {
+  modalAudio.pause();
+  modalBackdrop.hidden = true;
+  openedPoint = null;
+  replacingRequiredOrder = null;
+  pendingSubstituteOrder = null;
+}
 
-// controlos
-prevBtn.addEventListener("click", () => {
-  if (currentRequired <= 1) return;
-  currentRequired -= 1;
-  localStorage.setItem("currentRequired", String(currentRequired));
-  updateProgressUI();
-  loadCurrentPoint();
+closeModalBtn.addEventListener("click", closeModal);
+modalBackdrop.addEventListener("click", (e) => {
+  if (e.target === modalBackdrop) closeModal();
 });
 
-playBtn.addEventListener("click", togglePlay);
+replayBtn.addEventListener("click", () => {
+  modalAudio.currentTime = 0;
+  modalAudio.play().catch(() => {});
+});
 
-nextBtn.addEventListener("click", () => {
-  if (nextBtn.disabled) return;
+continueBtn.addEventListener("click", () => {
+  if (!openedPoint) return;
 
-  if (currentRequired < REQUIRED_TOTAL) {
-    currentRequired += 1;
-    localStorage.setItem("currentRequired", String(currentRequired));
-    updateProgressUI();
-    loadCurrentPoint();
+  if (!audioStarted) {
+    alert(lang === "pt"
+      ? "Dica: inicia o áudio antes de avançar 🙂"
+      : "Tip: start the audio before continuing 🙂"
+    );
+  }
+
+  if (openedPoint.kind === "required") {
+    if (openedPoint.order === currentRequired && currentRequired < REQUIRED_TOTAL) {
+      currentRequired += 1;
+      localStorage.setItem("currentRequired", String(currentRequired));
+    }
+    replacingRequiredOrder = null;
+    pendingSubstituteOrder = null;
+    updateHeader();
+    renderStopList();
+    closeModal();
+    return;
+  }
+
+  if (
+    openedPoint.kind === "optional" &&
+    (replacingRequiredOrder === currentRequired || pendingSubstituteOrder === currentRequired)
+  ) {
+    substitutedRequired.add(currentRequired);
+    usedOptionals.add(openedPoint.id);
+    saveSets();
+
+    if (currentRequired < REQUIRED_TOTAL) {
+      currentRequired += 1;
+      localStorage.setItem("currentRequired", String(currentRequired));
+    }
+
+    replacingRequiredOrder = null;
+    pendingSubstituteOrder = null;
+    updateHeader();
+    renderStopList();
+    closeModal();
   }
 });
 
-// ====== IDIOMA (aplica ao site todo) ======
+// ====== IDIOMA ======
 function applyStaticTexts() {
   document.documentElement.lang = lang;
   document.title = ui[lang].pageTitle;
@@ -337,12 +583,12 @@ function applyStaticTexts() {
   introTitle.textContent = ui[lang].introTitle;
   introSub.textContent = ui[lang].introSub;
 
+  tracksTitle.textContent = ui[lang].tracksTitle;
+  tracksSub.textContent = ui[lang].tracksSub;
+
   footerCopy.textContent = ui[lang].footer;
 
   resetBtn.textContent = ui[lang].reset;
-
-  updateProgressUI();
-  loadCurrentPoint();
 }
 
 function setLang(newLang) {
@@ -351,8 +597,10 @@ function setLang(newLang) {
     b.setAttribute("aria-pressed", b.dataset.lang === newLang ? "true" : "false")
   );
   applyStaticTexts();
+  updateHeader();
+  renderStopList();
+  if (openedPoint) openModal(openedPoint);
 }
-
 langBtns.forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
 // ====== OVERLAY ======
@@ -361,7 +609,6 @@ function initOverlay() {
   scrollOverlay.style.display = "flex";
   scrollOverlay.classList.remove("is-hidden");
 }
-
 function dismissOverlay() {
   if (!scrollOverlay) return;
   if (scrollOverlay.classList.contains("is-hidden")) return;
@@ -372,17 +619,18 @@ function dismissOverlay() {
 // ====== RECOMEÇAR ======
 function resetProgress() {
   localStorage.removeItem("currentRequired");
-  localStorage.removeItem("listenedComplete");
+  localStorage.removeItem("substitutedRequired");
+  localStorage.removeItem("usedOptionals");
 
   currentRequired = 1;
-  listenedComplete = new Set();
+  substitutedRequired = new Set();
+  usedOptionals = new Set();
+  replacingRequiredOrder = null;
+  pendingSubstituteOrder = null;
 
-  playerAudio.pause();
-  playerAudio.currentTime = 0;
-  resetAudioBar();
-
-  updateProgressUI();
-  loadCurrentPoint();
+  closeModal();
+  updateHeader();
+  renderStopList();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
   initOverlay();
@@ -394,26 +642,7 @@ resetBtn.addEventListener("click", () => {
   if (ok) resetProgress();
 });
 
-// ====== MAPA PARTILHADO: move o MESMO mapa (/intro) para sticky ======
-let mapIsInSticky = false;
-
-function moveMapToSticky(){
-  if (!sharedMap || !stickyMapMount) return;
-  if (mapIsInSticky) return;
-
-  stickyMapMount.appendChild(sharedMap);
-  mapIsInSticky = true;
-}
-
-function moveMapToIntro(){
-  if (!sharedMap || !introVisual) return;
-  if (!mapIsInSticky) return;
-
-  introVisual.appendChild(sharedMap);
-  mapIsInSticky = false;
-}
-
-// ====== INTRO: animação com scroll ======
+// ====== INTRO: animação ======
 function layerUpdate(layer, t, depthPx) {
   if (!layer) return;
   layer.style.opacity = String(t);
@@ -426,7 +655,6 @@ function updateIntroAnimation() {
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
 
-  // copy
   const c2 = clamp01((scrolled - 0.05) / 0.14);
   const c3 = clamp01((scrolled - 0.10) / 0.16);
 
@@ -436,7 +664,6 @@ function updateIntroAnimation() {
   introSub.style.opacity = String(c3);
   introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
 
-  // layers (/intro apenas)
   const t1 = clamp01((scrolled - 0.08) / 0.14);
   const t2 = clamp01((scrolled - 0.20) / 0.14);
   const t3 = clamp01((scrolled - 0.32) / 0.14);
@@ -451,21 +678,17 @@ function updateIntroAnimation() {
   layerUpdate(introLayers[4], t5, 10);
   layerUpdate(introLayers[5], t6, 12);
 
-  // hint
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
   }
 
-  // fim da intro -> mostra rota + move o MESMO mapa (sem trocar imagens)
+  // ✅ Só mostrar rota quando a animação acabou E o mapa está pronto
   const showRoute = scrolled >= 0.93;
   setRouteVisible(showRoute);
-
-  if (showRoute) moveMapToSticky();
-  else moveMapToIntro();
 }
 
-// throttle ~30fps
+// throttle 30fps
 let ticking = false;
 let lastFrameTime = 0;
 const FRAME_MS = 33;
@@ -484,22 +707,27 @@ function onScroll(){
     });
   }
 }
+
 window.addEventListener("scroll", onScroll, { passive: true });
 
 // ====== INIT ======
-syncHeaderHeight();
+modalBackdrop.hidden = true;
 
 applyStaticTexts();
-updateProgressUI();
-loadCurrentPoint();
+updateHeader();
+renderStopList();
 
 setRouteVisible(false);
 initOverlay();
 updateIntroAnimation();
 
+preloadImages(MAP_SRCS).then(() => {
+  mapReady = true;
+  // reavalia a animação/visibilidade caso o utilizador já esteja no fim da intro
+  updateIntroAnimation();
+});
+
 requestAnimationFrame(() => {
-  syncHeaderHeight();
   updateIntroAnimation();
   if (window.scrollY > 6) dismissOverlay();
 });
-
