@@ -96,10 +96,8 @@ const points = [
 let lang = "pt";
 let currentRequired = 1;
 
-// next só desbloqueia quando áudio termina
 let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
 
-// persistência do ponto atual
 const saved = localStorage.getItem("currentRequired");
 if (saved) {
   const n = Number(saved);
@@ -210,7 +208,7 @@ function setRouteVisible(visible) {
   }
 }
 
-// ====== HEADER HEIGHT REAL (para não sobrepor a intro) ======
+// ====== HEADER HEIGHT REAL ======
 function syncHeaderHeight(){
   if (!globalBar) return;
   const h = Math.ceil(globalBar.getBoundingClientRect().height);
@@ -218,7 +216,6 @@ function syncHeaderHeight(){
 }
 window.addEventListener("resize", syncHeaderHeight);
 window.addEventListener("orientationchange", syncHeaderHeight);
-// depois de fontes/imagens assentarem
 window.addEventListener("load", () => {
   syncHeaderHeight();
   updateIntroAnimation();
@@ -241,24 +238,19 @@ function setAudioBarPct(pct01){
   playerAudioBar.style.width = `${pct.toFixed(2)}%`;
 }
 
-function resetAudioBar(){
-  setAudioBarPct(0);
-}
+function resetAudioBar(){ setAudioBarPct(0); }
 
-// atualiza em tempo real (barra fininha do áudio)
 playerAudio.addEventListener("timeupdate", () => {
   const d = playerAudio.duration;
   if (!Number.isFinite(d) || d <= 0) return;
   setAudioBarPct(playerAudio.currentTime / d);
 });
 
-// quando carrega metadata (para evitar “saltos”)
 playerAudio.addEventListener("loadedmetadata", () => {
   const d = playerAudio.duration;
   if (!Number.isFinite(d) || d <= 0) resetAudioBar();
 });
 
-// quando termina: barra a 100%
 playerAudio.addEventListener("ended", () => {
   setAudioBarPct(1);
   listenedComplete.add(listenedKeyForRequired(currentRequired));
@@ -271,12 +263,10 @@ function loadCurrentPoint(){
   const p = getRequiredByOrder(currentRequired);
   if (!p) return;
 
-  // textos
   playerKicker.textContent = ui[lang].nowPlaying;
   playerTitle.textContent = p.title[lang];
   playerText.textContent = p.text[lang];
 
-  // áudio
   playerAudio.pause();
   playerAudio.currentTime = 0;
   resetAudioBar();
@@ -284,29 +274,21 @@ function loadCurrentPoint(){
   playerAudio.src = p.audio[lang];
   playerAudio.load();
 
-  // botões
   prevBtn.disabled = currentRequired <= 1;
   playBtn.textContent = "▶";
 
-  // next bloqueado até ouvir completo
   nextBtn.disabled = !listenedComplete.has(listenedKeyForRequired(currentRequired));
 }
 
 function togglePlay(){
   if (!playerAudio.src) return;
-
-  if (playerAudio.paused) {
-    playerAudio.play().catch(() => {});
-  } else {
-    playerAudio.pause();
-  }
+  if (playerAudio.paused) playerAudio.play().catch(() => {});
+  else playerAudio.pause();
 }
 
-// ícone play/pause
 playerAudio.addEventListener("play", () => { playBtn.textContent = "❚❚"; });
 playerAudio.addEventListener("pause", () => { playBtn.textContent = "▶"; });
 
-// controlos
 prevBtn.addEventListener("click", () => {
   if (currentRequired <= 1) return;
   currentRequired -= 1;
@@ -319,7 +301,6 @@ playBtn.addEventListener("click", togglePlay);
 
 nextBtn.addEventListener("click", () => {
   if (nextBtn.disabled) return;
-
   if (currentRequired < REQUIRED_TOTAL) {
     currentRequired += 1;
     localStorage.setItem("currentRequired", String(currentRequired));
@@ -328,7 +309,7 @@ nextBtn.addEventListener("click", () => {
   }
 });
 
-// ====== IDIOMA (aplica ao site todo) ======
+// ====== IDIOMA ======
 function applyStaticTexts() {
   document.documentElement.lang = lang;
   document.title = ui[lang].pageTitle;
@@ -339,12 +320,11 @@ function applyStaticTexts() {
   overlayTitle.textContent = ui[lang].overlayTitle;
   overlayText.textContent = ui[lang].overlayText;
 
-  // FIX: manter quebra de linha como no HTML (<br/>)
+  // manter quebra de linha
   introTitle.innerHTML = ui[lang].introTitle.replace(/\n/g, "<br/>");
   introSub.textContent = ui[lang].introSub;
 
   footerCopy.textContent = ui[lang].footer;
-
   resetBtn.textContent = ui[lang].reset;
 
   updateProgressUI();
@@ -358,7 +338,6 @@ function setLang(newLang) {
   );
   applyStaticTexts();
 }
-
 langBtns.forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
 // ====== OVERLAY ======
@@ -402,13 +381,12 @@ resetBtn.addEventListener("click", () => {
   if (ok) resetProgress();
 });
 
-// ====== MAPA PARTILHADO: move o MESMO mapa (/intro) para sticky ======
+// ====== MAPA PARTILHADO ======
 let mapIsInSticky = false;
 
 function moveMapToSticky(){
   if (!sharedMap || !stickyMapMount) return;
   if (mapIsInSticky) return;
-
   stickyMapMount.appendChild(sharedMap);
   mapIsInSticky = true;
 }
@@ -416,9 +394,17 @@ function moveMapToSticky(){
 function moveMapToIntro(){
   if (!sharedMap || !introVisual) return;
   if (!mapIsInSticky) return;
-
   introVisual.appendChild(sharedMap);
   mapIsInSticky = false;
+}
+
+// FORÇAR ESTADO FINAL DO MAPA (6 layers a 100%)
+function forceMapComplete(){
+  for (const layer of introLayers) {
+    if (!layer) continue;
+    layer.style.opacity = "1";
+    layer.style.transform = "translate3d(0, 0px, 0)";
+  }
 }
 
 // ====== INTRO: animação com scroll ======
@@ -440,43 +426,44 @@ function updateIntroAnimation() {
   const c2 = clamp01((scrolled - 0.05) / 0.14);
   const c3 = clamp01((scrolled - 0.10) / 0.16);
 
-  if (introTitle) {
-    introTitle.style.opacity = String(c2);
-    introTitle.style.transform = `translate3d(0, ${(10 - (c2 * 10)).toFixed(2)}px, 0)`;
+  introTitle.style.opacity = String(c2);
+  introTitle.style.transform = `translate3d(0, ${(10 - (c2 * 10)).toFixed(2)}px, 0)`;
+
+  introSub.style.opacity = String(c3);
+  introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
+
+  // fim da intro -> mostra rota + move mapa
+  const showRoute = scrolled >= 0.93;
+  setRouteVisible(showRoute);
+
+  if (showRoute) {
+    moveMapToSticky();
+    // IMPORTANTÍSSIMO: ao entrar na rota, mapa tem de estar completo (6 layers)
+    forceMapComplete();
+  } else {
+    moveMapToIntro();
+
+    // layers animadas
+    const t1 = clamp01((scrolled - 0.08) / 0.14);
+    const t2 = clamp01((scrolled - 0.20) / 0.14);
+    const t3 = clamp01((scrolled - 0.32) / 0.14);
+    const t4 = clamp01((scrolled - 0.44) / 0.14);
+    const t5 = clamp01((scrolled - 0.56) / 0.16);
+    const t6 = clamp01((scrolled - 0.70) / 0.16);
+
+    layerUpdate(introLayers[0], t1, 2);
+    layerUpdate(introLayers[1], t2, 4);
+    layerUpdate(introLayers[2], t3, 6);
+    layerUpdate(introLayers[3], t4, 8);
+    layerUpdate(introLayers[4], t5, 10);
+    layerUpdate(introLayers[5], t6, 12);
   }
-
-  if (introSub) {
-    introSub.style.opacity = String(c3);
-    introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
-  }
-
-  // layers (/intro apenas)
-  const t1 = clamp01((scrolled - 0.08) / 0.14);
-  const t2 = clamp01((scrolled - 0.20) / 0.14);
-  const t3 = clamp01((scrolled - 0.32) / 0.14);
-  const t4 = clamp01((scrolled - 0.44) / 0.14);
-  const t5 = clamp01((scrolled - 0.56) / 0.16);
-  const t6 = clamp01((scrolled - 0.70) / 0.16);
-
-  layerUpdate(introLayers[0], t1, 2);
-  layerUpdate(introLayers[1], t2, 4);
-  layerUpdate(introLayers[2], t3, 6);
-  layerUpdate(introLayers[3], t4, 8);
-  layerUpdate(introLayers[4], t5, 10);
-  layerUpdate(introLayers[5], t6, 12);
 
   // hint
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
   }
-
-  // fim da intro -> mostra rota + move o MESMO mapa (sem trocar imagens)
-  const showRoute = scrolled >= 0.93;
-  setRouteVisible(showRoute);
-
-  if (showRoute) moveMapToSticky();
-  else moveMapToIntro();
 }
 
 // throttle ~30fps
