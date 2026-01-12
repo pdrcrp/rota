@@ -123,6 +123,8 @@ const nextBtn = document.getElementById("nextBtn");
 const playerAudio = document.getElementById("playerAudio");
 
 const resetBtn = document.getElementById("resetBtn");
+
+/* ✅ agora há botões de idioma no header E no popup */
 const langBtns = [...document.querySelectorAll(".lang-btn")];
 
 const globalTitle = document.getElementById("globalTitle");
@@ -138,10 +140,6 @@ const introTitle = document.getElementById("introTitle");
 const introSub = document.getElementById("introSub");
 
 const routeWrap = document.getElementById("route");
-
-const stickyMapMount = document.getElementById("stickyMapMount");
-const introVisual = document.getElementById("introVisual");
-const sharedMap = document.getElementById("sharedMap");
 
 const introLayers = [
   document.querySelector(".intro-map .l1"),
@@ -208,9 +206,26 @@ function setRouteVisible(visible) {
   }
 }
 
+/* ✅ mostrar header só depois do 1º scroll */
+let headerShown = false;
+function showHeaderNow(){
+  if (headerShown) return;
+  headerShown = true;
+  document.body.classList.remove("header-hidden");
+  globalBar?.setAttribute("aria-hidden", "false");
+  syncHeaderHeight(); // agora sim mede header real e aplica padding-top
+}
+
 // ====== HEADER HEIGHT REAL ======
 function syncHeaderHeight(){
   if (!globalBar) return;
+
+  // se ainda está escondido, headerH=0 para não empurrar layout
+  if (document.body.classList.contains("header-hidden")) {
+    document.documentElement.style.setProperty("--headerH", `0px`);
+    return;
+  }
+
   const h = Math.ceil(globalBar.getBoundingClientRect().height);
   document.documentElement.style.setProperty("--headerH", `${h}px`);
 }
@@ -332,11 +347,15 @@ function applyStaticTexts() {
 
 function setLang(newLang) {
   lang = newLang;
+
+  // ✅ atualiza TODOS os botões (popup + header)
   langBtns.forEach(b =>
     b.setAttribute("aria-pressed", b.dataset.lang === newLang ? "true" : "false")
   );
+
   applyStaticTexts();
 }
+
 langBtns.forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
 // ====== OVERLAY ======
@@ -370,14 +389,19 @@ function resetProgress() {
   updateProgressUI();
   loadCurrentPoint();
 
-  document.body.classList.remove("route-mode");
-
   window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // volta ao estado inicial do header + overlay
+  headerShown = false;
+  document.body.classList.add("header-hidden");
+  globalBar?.setAttribute("aria-hidden", "true");
+  syncHeaderHeight();
+
   initOverlay();
   setRouteVisible(false);
 
-  // volta a pôr o mapa na intro (se estava no sticky)
-  moveMapToIntro();
+  // desbloqueia o fim do mapa para animar de novo
+  mapLockedFinal = false;
 }
 
 resetBtn.addEventListener("click", () => {
@@ -385,49 +409,9 @@ resetBtn.addEventListener("click", () => {
   if (ok) resetProgress();
 });
 
-// ====== MAPA PARTILHADO ======
-let mapIsInSticky = false;
+// ====== MAPA: estado final sem reset ======
+let mapLockedFinal = false;
 
-/* ✅ remove qualquer “fallback map.png” que exista no mount
-   (mesmo que não esteja neste snippet, isto evita conflitos no teu projeto real)
-*/
-function removeFallbackMaps(root){
-  if (!root) return;
-  const imgs = root.querySelectorAll('img');
-  imgs.forEach(img => {
-    const src = (img.getAttribute("src") || "").toLowerCase();
-    if (src.includes("map.png") || src.endsWith("/map.png") || src.endsWith("map.png")) {
-      img.remove();
-    }
-    if (img.id === "mapPng" || img.dataset.fallbackMap === "true") {
-      img.remove();
-    }
-  });
-}
-
-function moveMapToSticky(){
-  if (!sharedMap || !stickyMapMount) return;
-  if (mapIsInSticky) return;
-
-  // limpa qualquer fallback antes de montar o mapa real
-  removeFallbackMaps(stickyMapMount);
-
-  stickyMapMount.appendChild(sharedMap);
-  mapIsInSticky = true;
-}
-
-function moveMapToIntro(){
-  if (!sharedMap || !introVisual) return;
-  if (!mapIsInSticky) return;
-
-  // limpa fallback também na intro, só por segurança
-  removeFallbackMaps(introVisual);
-
-  introVisual.appendChild(sharedMap);
-  mapIsInSticky = false;
-}
-
-// FORÇAR ESTADO FINAL DO MAPA (6 layers a 100% e sem translate)
 function forceMapComplete(){
   for (const layer of introLayers) {
     if (!layer) continue;
@@ -447,6 +431,13 @@ function layerUpdate(layer, t, depthPx) {
 function updateIntroAnimation() {
   if (!intro) return;
 
+  // ✅ se já bloqueaste o final, não recalcules layers (evita “reset”)
+  if (mapLockedFinal) {
+    forceMapComplete();
+    setRouteVisible(true);
+    return;
+  }
+
   const rect = intro.getBoundingClientRect();
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
@@ -461,7 +452,7 @@ function updateIntroAnimation() {
   introSub.style.opacity = String(c3);
   introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
 
-  // layers animadas
+  // layers
   const t1 = clamp01((scrolled - 0.08) / 0.14);
   const t2 = clamp01((scrolled - 0.20) / 0.14);
   const t3 = clamp01((scrolled - 0.32) / 0.14);
@@ -482,23 +473,14 @@ function updateIntroAnimation() {
     scrollHint.style.opacity = String(1 - tHint);
   }
 
-  // ✅ fim da intro -> mostra rota + fixa mapa por camadas como sticky
+  // ✅ fim da intro: BLOQUEIA final (não volta a animar), mostra route
   const showRoute = scrolled >= 0.93;
-  setRouteVisible(showRoute);
-
   if (showRoute) {
-    // 1) marca modo rota (CSS colapsa introVisual para não haver buraco)
-    document.body.classList.add("route-mode");
-
-    // 2) move o MESMO mapa para sticky e fixa no estado final
-    moveMapToSticky();
+    mapLockedFinal = true;
     forceMapComplete();
-
-    // 3) remove qualquer map.png que esteja a competir
-    removeFallbackMaps(stickyMapMount);
+    setRouteVisible(true);
   } else {
-    document.body.classList.remove("route-mode");
-    moveMapToIntro();
+    setRouteVisible(false);
   }
 }
 
@@ -508,7 +490,11 @@ let lastFrameTime = 0;
 const FRAME_MS = 33;
 
 function onScroll(){
-  if (window.scrollY > 6) dismissOverlay();
+  // 1º scroll: header aparece, overlay desaparece
+  if (window.scrollY > 2) {
+    showHeaderNow();
+    dismissOverlay();
+  }
 
   if (!ticking) {
     ticking = true;
@@ -537,5 +523,10 @@ updateIntroAnimation();
 requestAnimationFrame(() => {
   syncHeaderHeight();
   updateIntroAnimation();
-  if (window.scrollY > 6) dismissOverlay();
+
+  // se já abrir com scroll (ex: refresh no meio), mostra header
+  if (window.scrollY > 2) {
+    showHeaderNow();
+    dismissOverlay();
+  }
 });
