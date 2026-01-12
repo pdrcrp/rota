@@ -1,5 +1,5 @@
 /* =========================
-   FONTES
+   FONTES (locais)
 ========================= */
 @font-face{
   font-family: "Aileron";
@@ -8,6 +8,7 @@
   font-style: normal;
   font-display: swap;
 }
+
 @font-face{
   font-family: "Simpsonfont";
   src: url("assets/fonts/Simpsonfont DEMO.otf") format("opentype");
@@ -27,10 +28,13 @@
   --bg: var(--brandGreen);
   --text:#0b0d12;
 
-  --shadow: 0 18px 50px rgba(0,0,0,.12);
-
   --fontUI: "Aileron", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   --fontEditorial: "Simpsonfont", "Aileron", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+
+  --shadow: 0 18px 50px rgba(0,0,0,.12);
+
+  /* altura do header (ajustada em JS para ser exata) */
+  --headerH: 74px;
 }
 
 *{ box-sizing:border-box; }
@@ -43,7 +47,7 @@ body{
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
-  padding-top: 74px; /* espaço para globalbar */
+  padding-top: var(--headerH);
 }
 
 /* subtil grain */
@@ -58,8 +62,6 @@ body::before{
   background-size: 3px 3px;
   z-index: 0;
 }
-
-[hidden]{ display:none !important; }
 
 .chapters{
   position: relative;
@@ -137,6 +139,7 @@ body::before{
 }
 
 .lang{ display:flex; gap:8px; }
+
 .lang-btn{
   border:1px solid rgba(11,13,18,.12);
   background: rgba(242,231,207,.42);
@@ -146,11 +149,13 @@ body::before{
   cursor:pointer;
   font-weight: 800;
 }
+
 .lang-btn[aria-pressed="true"]{
   border-color: rgba(15,79,121,.25);
   background: rgba(15,79,121,.10);
 }
 
+/* progresso global */
 .globalbar__progress{
   margin-top: 10px;
   display:flex;
@@ -173,13 +178,13 @@ body::before{
   border-radius: 999px;
   overflow: hidden;
 }
+
 .progressbar > span{
   display:block;
   height: 100%;
   width: 0%;
   background: rgba(15,79,121,.85);
   border-radius: 999px;
-  will-change: width;
   transition: width .35s ease;
 }
 
@@ -242,97 +247,17 @@ body::before{
 }
 
 /* =========================
-   ✅ MAPA ÚNICO (STICKY GLOBAL)
-   - ocupa espaço real no layout
-   - portanto a lista NÃO fica debaixo
-========================= */
-.sticky-map-shell{
-  position: sticky;
-  top: calc(74px + env(safe-area-inset-top));
-  z-index: 10; /* acima do conteúdo, mas sem o tapar porque ocupa altura */
-  padding: 0;
-}
-
-.sticky-map{
-  position: relative;
-  width: 100vw;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  background: var(--brandGreen);
-}
-
-/* performance */
-.sticky-map,
-.sticky-map .layer{
-  will-change: transform, opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-.sticky-map .layer{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
-  object-fit: cover;
-  opacity: 0;
-  transform: translate3d(0, 10px, 0);
-}
-
-.sticky-map__pins{
-  position:absolute;
-  inset:0;
-  pointer-events: none;
-}
-
-/* pins */
-.pin{
-  position:absolute;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size: 12px;
-  font-weight: 900;
-  border: 1px solid rgba(11,13,18,.18);
-  background: rgba(242,231,207,.92);
-  color: rgba(11,13,18,.92);
-  box-shadow: 0 10px 18px rgba(0,0,0,.10);
-  cursor: pointer;
-}
-.pin.is-active{
-  border-color: rgba(15,79,121,.30);
-  background: rgba(15,79,121,.14);
-}
-.pin.is-done{
-  border-color: rgba(34,197,94,.30);
-  background: rgba(34,197,94,.14);
-}
-.pin.is-locked{
-  opacity: .55;
-  filter: blur(.2px);
-  cursor: not-allowed;
-}
-.pin.is-optional{ border-style: dashed; }
-
-/* =========================
-   INTRO
+   INTRO (não ficar por baixo do header)
 ========================= */
 .intro{
-  height: 220vh; /* continua a ser o “motor” do scroll */
+  height: 220vh;
   position: relative;
 }
 
 .intro-sticky{
   position: sticky;
-  top: 0;
-  height: calc(100vh - 74px);
+  top: var(--headerH);
+  height: calc(100vh - var(--headerH));
   padding: 18px;
   display:flex;
   flex-direction:column;
@@ -342,7 +267,7 @@ body::before{
 .intro-top{ text-align: center; }
 
 .intro-copy{
-  margin: 12px auto 0;
+  margin: 10px auto 0;
   max-width: 34ch;
   text-align: center;
 }
@@ -366,6 +291,45 @@ body::before{
   opacity: 0;
   transform: translate3d(0, 10px, 0);
   will-change: transform, opacity;
+}
+
+/* zona do mapa */
+.intro-visual{
+  position: relative;
+  height: 72vh;
+  min-height: 460px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* mapa partilhado (full bleed) */
+.intro-map{
+  position: relative;
+  width: 100vw;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  background: var(--brandGreen);
+}
+
+/* Performance iOS */
+.intro-map,
+.intro-map .layer{
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.intro-map .layer{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
 }
 
 .scroll-hint{
@@ -407,116 +371,155 @@ body::before{
   pointer-events: auto;
 }
 
+/* sticky do MAPA (continua full-bleed para não “parecer outro mapa”) */
+.sticky-map{
+  position: sticky;
+  top: calc(var(--headerH) + env(safe-area-inset-top));
+  z-index: 5;
+  padding-top: 8px;
+}
+
+.sticky-map__mount{
+  width: 100%;
+  display: block;
+  min-height: 1px; /* ✅ evita colapsos/flash na transição */
+}
+
+/* quando o mapa é montado no sticky, mantém EXACTAMENTE o look full width */
+.sticky-map .intro-map{
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+}
+
 /* =========================
-   LISTA
+   PLAYER (Spotify-like)
 ========================= */
-.tracks{
-  margin-top: 14px;
-  padding-bottom: 6px;
+.player{
+  margin-top: 12px;
 }
 
-.tracks-head{
-  padding: 8px 2px 10px;
+.player-card{
+  border: 1px solid rgba(11,13,18,.12);
+  background: rgba(242,231,207,.72);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.06);
 }
 
-.tracks-title{
-  margin: 0;
-  font-family: var(--fontEditorial);
-  font-weight: 400;
-  font-size: 20px;
-}
-
-.tracks-sub{
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: rgba(11,13,18,.72);
-}
-
-.track-list{
-  display:flex;
-  flex-direction:column;
-  gap: 6px;
-  padding-bottom: 6px;
-}
-
-.track{
+.player-top{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap: 10px;
-  padding: 10px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(11,13,18,.10);
-  background: rgba(242,231,207,.62);
-}
-.track:hover{
-  background: rgba(242,231,207,.72);
+  gap: 12px;
 }
 
-.track-left{
+.player-meta{
+  min-width: 0;
+}
+
+.player-kicker{
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: rgba(11,13,18,.72);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.player-title{
+  margin: 0;
+  font-weight: 900;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* barra do progresso do percurso */
+.player-routebar{
+  margin-top: 8px;
+  width: min(380px, 56vw);
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.45);
+  border: 1px solid rgba(11,13,18,.10);
+  overflow: hidden;
+}
+.player-routebar > span{
+  display:block;
+  height: 100%;
+  width: 0%;
+  background: rgba(15,79,121,.85);
+  border-radius: 999px;
+  transition: width .35s ease;
+}
+
+.player-controls{
   display:flex;
   align-items:center;
   gap: 10px;
-  min-width: 0;
-}
-.track-num{
-  width: 20px;
-  text-align:right;
-  font-weight: 900;
-  color: rgba(11,13,18,.72);
-  flex: 0 0 auto;
-}
-.track-meta{
-  display:flex;
-  flex-direction:column;
-  gap: 2px;
-  min-width: 0;
-}
-.track-title{
-  margin:0;
-  font-weight: 900;
-  font-size: 14px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.track-sub{
-  margin:0;
-  font-size: 12px;
-  color: rgba(11,13,18,.70);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.track-right{
-  display:flex;
-  gap: 8px;
   flex: 0 0 auto;
 }
 
-.track-btn{
+.ctl{
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
-  padding: 8px 10px;
   border: 1px solid rgba(11,13,18,.12);
   background: rgba(255,255,255,.32);
   color: rgba(11,13,18,.92);
-  cursor: pointer;
   font-weight: 900;
-}
-.track-btn.primary{
-  border-color: rgba(15,79,121,.22);
-  background: rgba(15,79,121,.10);
+  cursor: pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  user-select:none;
 }
 
-.track.is-locked{
-  opacity: .55;
-  filter: blur(.15px);
+.ctl.play{
+  border-color: rgba(15,79,121,.22);
+  background: rgba(15,79,121,.12);
 }
-.track.is-locked .track-btn{
+
+.ctl:disabled{
+  opacity: .55;
   cursor: not-allowed;
 }
 
+/* barra FININHA do progresso do áudio (distinta da do percurso) */
+.player-audiobar{
+  margin-top: 10px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(11,13,18,.12);
+  overflow: hidden;
+}
+.player-audiobar > span{
+  display:block;
+  height: 100%;
+  width: 0%;
+  background: rgba(34,197,94,.92);
+  border-radius: 999px;
+  transition: width .10s linear;
+}
+
+.player-bottom{
+  margin-top: 10px;
+  border-top: 1px solid rgba(11,13,18,.10);
+  padding-top: 10px;
+}
+
+.player-text{
+  margin: 0;
+  font-size: 13px;
+  color: rgba(11,13,18,.82);
+  line-height: 1.45;
+}
+
+/* Footer */
 .route-footer{
   margin-top: 12px;
   padding: 4px 2px 0;
@@ -532,96 +535,11 @@ body::before{
   font-size: 12px;
 }
 
-/* =========================
-   MODAL
-========================= */
-.modal-backdrop{
-  position: fixed; inset:0;
-  background: rgba(0,0,0,.45);
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-  padding: 14px;
-  z-index: 60;
-}
-
-.modal{
-  width: min(720px, 100%);
-  background: rgba(242,231,207,.96);
-  border: 1px solid rgba(11,13,18,.12);
-  border-radius: 18px;
-  padding: 14px;
-  color: rgba(11,13,18,.92);
-  box-shadow: var(--shadow);
-}
-
-.modal-head{
-  display:flex; justify-content:space-between; align-items:center;
-  gap: 12px;
-}
-
-.modal-head h2{
-  margin: 0;
-  font-family: var(--fontEditorial);
-  font-weight: 400;
-}
-
-.icon-btn{
-  border:1px solid rgba(11,13,18,.12);
-  background: rgba(255,255,255,.35);
-  color: rgba(11,13,18,.92);
-  border-radius: 10px;
-  padding: 8px 10px;
-  cursor:pointer;
-  font-weight: 900;
-}
-
-.modal-meta{
-  margin: 6px 0 10px;
-  color: rgba(11,13,18,.70);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.modal-body{ color: rgba(11,13,18,.92); line-height: 1.45; }
-
-.audio-box{
-  margin-top: 12px;
-  border: 1px solid rgba(11,13,18,.12);
-  border-radius: 14px;
-  padding: 10px;
-  background: rgba(255,255,255,.35);
-}
-
-.audio-label{
-  margin: 0 0 6px;
-  color: rgba(11,13,18,.70);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-audio{ width: 100%; }
-
-.modal-actions{
-  display:flex; gap:10px; justify-content:flex-end;
-  margin-top: 12px;
-}
-
-.btn{
-  border-radius: 12px;
-  padding: 10px 12px;
-  border: 1px solid rgba(11,13,18,.12);
-  cursor:pointer;
-  color: rgba(11,13,18,.92);
-  background: rgba(255,255,255,.35);
-  font-weight: 900;
-}
-.btn.primary{
-  border-color: rgba(15,79,121,.22);
-  background: rgba(15,79,121,.10);
-}
-.btn.secondary{
-  background: rgba(255,255,255,.35);
+/* reduz movimento */
+@media (prefers-reduced-motion: reduce){
+  .scroll-hint::after{ animation: none; }
+  .scroll-overlay__arrow{ animation: none; }
+  .player-audiobar > span{ transition: none; }
 }
 
 @media (prefers-reduced-motion: reduce){
