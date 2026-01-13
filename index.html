@@ -12,7 +12,7 @@
 </head>
 
 <body class="header-hidden">
-  <!-- HEADER: aparece só depois do 1º scroll -->
+  <!-- HEADER -->
   <header class="globalbar" id="globalBar" aria-hidden="true">
     <div class="globalbar__inner">
       <div class="globalbar__left">
@@ -24,9 +24,9 @@
       </div>
 
       <div class="globalbar__right">
-        <button class="reset-btn" id="resetBtn" type="button" title="Recomeçar percurso">Recomeçar</button>
+        <button class="reset-btn" id="resetBtn" type="button">Recomeçar</button>
 
-        <div class="lang" aria-label="Idioma">
+        <div class="lang">
           <button class="lang-btn header-lang-btn" data-lang="pt" aria-pressed="true">PT</button>
           <button class="lang-btn header-lang-btn" data-lang="en" aria-pressed="false">EN</button>
         </div>
@@ -35,91 +35,100 @@
 
     <div class="globalbar__progress">
       <p class="subtitle" id="progressText">Paragem 1 de 9</p>
-      <div class="progressbar" aria-hidden="true"><span id="progressBar"></span></div>
+      <div class="progressbar"><span id="progressBar"></span></div>
     </div>
   </header>
 
-  <!-- POPUP: só ele visível no início -->
-  <div class="scroll-overlay" id="scrollOverlay" aria-hidden="false">
-    <div class="scroll-overlay__card" role="dialog" aria-modal="true" aria-label="Boas-vindas">
+  <!-- OVERLAY -->
+  <div class="scroll-overlay" id="scrollOverlay">
+    <div class="scroll-overlay__card">
       <div class="scroll-overlay__top">
         <p class="scroll-overlay__title" id="overlayTitle">Bem vindo!</p>
 
-        <div class="overlay-lang" aria-label="Idioma">
+        <div class="overlay-lang">
           <button class="lang-btn overlay-lang-btn" data-lang="pt" aria-pressed="true">PT</button>
           <button class="lang-btn overlay-lang-btn" data-lang="en" aria-pressed="false">EN</button>
         </div>
       </div>
 
-      <p class="scroll-overlay__text" id="overlayText">Faz scroll para começares a descobrir o mapa</p>
-      <div class="scroll-overlay__arrow" aria-hidden="true">↓</div>
+      <p class="scroll-overlay__text" id="overlayText">
+        Faz scroll para começares a descobrir o mapa
+      </p>
+      <div class="scroll-overlay__arrow">↓</div>
     </div>
   </div>
 
   <div class="chapters">
     <!-- INTRO -->
-    <section class="intro chapter" id="intro" aria-label="Introdução">
-      <div class="intro-sticky" id="introSticky">
+    <section class="intro chapter" id="intro">
+      <div class="intro-sticky">
         <div class="intro-top">
-          <div class="intro-copy" aria-hidden="true">
-            <h2 class="intro-title" id="introTitle">Segue a cidade<br/>paragem a paragem</h2>
-            <p class="intro-sub" id="introSub">Ouve a história antes de entrar. Avança no percurso ao teu ritmo.</p>
+          <div class="intro-copy">
+            <h2 class="intro-title" id="introTitle">
+              Segue a cidade<br/>paragem a paragem
+            </h2>
+            <p class="intro-sub" id="introSub">
+              Ouve a história antes de entrar. Avança no percurso ao teu ritmo.
+            </p>
           </div>
         </div>
 
-        <!-- MAPA por camadas -->
-        <div class="intro-visual" id="introVisual">
-          <div class="intro-map" id="sharedMap" aria-hidden="true">
-            <img class="layer l1" src="assets/intro/01-background.webp" alt="" decoding="async" />
-            <img class="layer l2" src="assets/intro/02-ruas.webp" alt="" decoding="async" />
-            <img class="layer l3" src="assets/intro/03-elementos.webp" alt="" decoding="async" />
-            <img class="layer l4" src="assets/intro/04-percurso.webp" alt="" decoding="async" />
-            <img class="layer l5" src="assets/intro/05-icones.webp" alt="" decoding="async" />
-            <img class="layer l6" src="assets/intro/06-nomes.webp" alt="" decoding="async" />
+        <div class="intro-visual">
+          <div class="intro-map">
+            <img class="layer l1" src="assets/intro/01-background.webp" alt="">
+            <img class="layer l2" src="assets/intro/02-ruas.webp" alt="">
+            <img class="layer l3" src="assets/intro/03-elementos.webp" alt="">
+            <img class="layer l4" src="assets/intro/04-percurso.webp" alt="">
+            <img class="layer l5" src="assets/intro/05-icones.webp" alt="">
+            <img class="layer l6" src="assets/intro/06-nomes.webp" alt="">
           </div>
         </div>
 
-        <div class="scroll-hint" id="scrollHint">Faz scroll</div>
+        <div class="scroll-hint">Faz scroll</div>
       </div>
     </section>
 
     <!-- ROTA -->
-    <section class="route chapter" id="routeChapter" aria-label="Rota">
+    <section class="route chapter">
       <main class="route-wrap is-hidden" id="route">
-        <section class="player" aria-label="Player do percurso">
+        <section class="player">
           <div class="player-card">
 
-            <!-- ✅ Linha 1: nome da paragem + controlos -->
+            <!-- Linha principal -->
             <div class="player-top">
               <div class="player-meta">
                 <p class="player-kicker" id="playerKicker">Paragem atual</p>
                 <h3 class="player-title" id="playerTitle">—</h3>
               </div>
 
-              <div class="player-controls" aria-label="Controlos">
-                <button class="ctl" id="prevBtn" type="button" aria-label="Anterior" title="Anterior">⟨</button>
-                <button class="ctl play" id="playBtn" type="button" aria-label="Reproduzir/Pausar" title="Play/Pause">▶</button>
-                <button class="ctl" id="nextBtn" type="button" aria-label="Seguinte" title="Seguinte" disabled>⟩</button>
+              <div class="player-controls">
+                <button class="ctl" id="prevBtn">⟨</button>
+                <button class="ctl play" id="playBtn">▶</button>
+                <button class="ctl" id="nextBtn" disabled>⟩</button>
               </div>
             </div>
 
-            <!-- ✅ Linha 2: botão da paragem alternativa (fica abaixo da linha de cima) -->
-            <div class="player-choice" id="playerChoice" hidden aria-label="Paragem alternativa">
-              <!-- mantém estes IDs para o JS -->
-              <button class="choice-btn" id="choiceMain" type="button" aria-pressed="true">Paragem</button>
-              <button class="choice-btn" id="choiceAlt" type="button" aria-pressed="false">Alternativo</button>
+            <!-- ✅ Paragem alternativa (full-width, abaixo) -->
+            <div class="player-choice" id="playerChoice" hidden>
+              <button class="choice-btn" id="choiceMain" type="button" aria-pressed="true">
+                Paragem
+              </button>
+
+              <!-- 🔹 MICRO-ALTERAÇÃO AQUI -->
+              <button class="choice-btn choice-btn--single" id="choiceAlt" type="button" aria-pressed="false">
+                Alternativo
+              </button>
             </div>
 
-            <!-- ✅ Barra de progresso do percurso (agora fica abaixo da escolha) -->
-            <div class="player-routebar" aria-hidden="true">
+            <div class="player-routebar">
               <span id="playerRouteBar"></span>
             </div>
 
-            <div class="player-audiobar" aria-hidden="true">
+            <div class="player-audiobar">
               <span id="playerAudioBar"></span>
             </div>
 
-            <audio id="playerAudio" preload="metadata"></audio>
+            <audio id="playerAudio"></audio>
 
             <div class="player-bottom">
               <p class="player-text" id="playerText"></p>
@@ -127,7 +136,7 @@
           </div>
         </section>
 
-        <footer class="route-footer" id="routeFooter" aria-hidden="true">
+        <footer class="route-footer" id="routeFooter">
           <div class="route-footer__line"></div>
           <p class="route-footer__copy" id="footerCopy">Postais por Lisboa</p>
         </footer>
