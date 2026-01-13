@@ -191,7 +191,7 @@ const ui = {
     reset: "Restart",
     resetConfirm: "Restart the route? (This will erase your progress.)",
 
-    altToggleLabel: (_altLabel, altTitle) => `Alternative: ${altTitle}`,
+    altToggleLabel: (_altLabel, altTitle) => `Alternative: ${altTitle}`,const choiceAltToggle = document.getElementById("choiceAltToggle") || document.getElementById("choiceAlt");
     noAlt: "No alternative",
   }
 };
