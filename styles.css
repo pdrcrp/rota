@@ -17,7 +17,7 @@
 }
 
 /* =========================
-   THEME (Shopify-like)
+   THEME
 ========================= */
 :root{
   --brandBlue:#0F4F79;
@@ -30,22 +30,14 @@
   --fontUI: "Aileron", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   --fontEditorial: "Simpsonfont", "Aileron", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
 
-  /* surfaces */
   --surface: rgba(255,255,255,.92);
-  --surface2: rgba(255,255,255,.78);
   --border: rgba(15,79,121,.14);
-  --borderSoft: rgba(15,79,121,.10);
 
-  /* shadows */
-  --shadowSm: 0 10px 24px rgba(0,0,0,.10);
   --shadowMd: 0 18px 44px rgba(0,0,0,.14);
 
-  /* header: creme (como pediste antes) */
+  /* header creme */
   --headerBg: #f2e7cf;
   --headerText: #0f4f79;
-
-  --radius: 18px;
-  --radiusLg: 22px;
 
   --headerH: 0px;
 }
@@ -53,7 +45,6 @@
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
 
-/* impedir overscroll bounce */
 html{ overscroll-behavior-y: none; }
 body{ overscroll-behavior-y: none; }
 
@@ -61,13 +52,13 @@ body{
   margin:0;
   font-family: var(--fontUI);
   color: var(--text);
-  background: var(--bg);
+  background: var(--bg); /* ✅ verde sólido */
   padding-top: var(--headerH);
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
 
-/* grain subtil (Shopify-like: muito leve) */
+/* grain subtil */
 body::before{
   content:"";
   position: fixed;
@@ -83,10 +74,8 @@ body::before{
 .chapters{ position: relative; z-index: 1; scroll-snap-type: y proximity; }
 .chapter{ scroll-snap-align: start; }
 
-/* hidden sempre mesmo hidden */
 [hidden]{ display:none !important; }
 
-/* foco */
 :focus-visible{
   outline: 3px solid rgba(15,79,121,.32);
   outline-offset: 3px;
@@ -94,7 +83,7 @@ body::before{
 }
 
 /* =========================
-   HEADER (clean)
+   HEADER
 ========================= */
 .globalbar{
   position: fixed;
@@ -108,7 +97,6 @@ body::before{
   box-shadow: 0 14px 28px rgba(0,0,0,.12);
   transition: opacity .22s ease, transform .22s ease;
 }
-
 body.header-hidden .globalbar{
   opacity: 0;
   pointer-events: none;
@@ -187,13 +175,11 @@ body.header-hidden .globalbar{
   justify-content:space-between;
   gap: 12px;
 }
-
 .subtitle{
   margin:0;
   color: rgba(15,79,121,.75);
   font-size: 13px;
 }
-
 .progressbar{
   width: min(260px, 44vw);
   height: 6px;
@@ -212,7 +198,7 @@ body.header-hidden .globalbar{
 }
 
 /* =========================
-   OVERLAY (Shopify-ish)
+   OVERLAY
 ========================= */
 .scroll-overlay{
   position: fixed;
@@ -246,17 +232,9 @@ body.header-hidden .globalbar{
   justify-content:space-between;
   gap: 10px;
 }
-
-.overlay-brand{
-  display:flex;
-  align-items:center;
-  gap: 8px;
-}
-
+.overlay-brand{ display:flex; align-items:center; gap: 8px; }
 .badge-dot{
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
+  width: 10px; height: 10px; border-radius: 999px;
   background: rgba(15,79,121,.92);
   box-shadow: 0 0 0 6px rgba(15,79,121,.10);
 }
@@ -290,7 +268,6 @@ body.header-hidden .globalbar{
   font-size: 18px;
   animation: bounce 1.05s infinite;
 }
-
 @keyframes bounce{
   0%{ transform: translateY(0); opacity:.75; }
   50%{ transform: translateY(6px); opacity:1; }
@@ -298,10 +275,10 @@ body.header-hidden .globalbar{
 }
 
 /* =========================
-   INTRO (menos gaps, mais clean)
+   INTRO (menos gap + texto bege)
 ========================= */
 .intro{
-  height: 205vh;
+  height: 200vh;
   position: relative;
 }
 
@@ -309,11 +286,11 @@ body.header-hidden .globalbar{
   position: sticky;
   top: var(--headerH);
   height: calc(100vh - var(--headerH));
-  padding: 10px 14px 10px;
+  padding: 8px 14px 10px;   /* ✅ menos padding topo */
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  gap: 6px;
+  gap: 4px;                 /* ✅ menos gap */
 }
 
 .intro-top{ text-align:center; }
@@ -324,6 +301,7 @@ body.header-hidden .globalbar{
   text-align: center;
 }
 
+/* ✅ título/subtitle BEGE */
 .intro-title{
   margin: 0 0 2px;
   font-family: var(--fontEditorial);
@@ -331,6 +309,8 @@ body.header-hidden .globalbar{
   font-size: 34px;
   line-height: 0.98;
   letter-spacing: -0.02em;
+  color: var(--brandCream);
+  text-shadow: 0 10px 24px rgba(0,0,0,.16);
   opacity: 0;
   transform: translate3d(0, 10px, 0);
   will-change: transform, opacity;
@@ -339,22 +319,25 @@ body.header-hidden .globalbar{
 .intro-sub{
   margin: 0;
   font-size: 13px;
-  color: rgba(11,13,18,.74);
+  color: rgba(242,231,207,.88);
+  text-shadow: 0 10px 22px rgba(0,0,0,.14);
   opacity: 0;
   transform: translate3d(0, 10px, 0);
   will-change: transform, opacity;
 }
 
+/* ✅ mais perto do texto */
 .intro-visual{
   position: relative;
-  margin-top: 2px; /* ✅ mais perto do texto */
-  height: 76vh;
-  min-height: 340px;
+  margin-top: 0px;          /* ✅ remove espaço */
+  height: 78vh;
+  min-height: 320px;
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
+/* ✅ MAPA sem moldura/quadrado */
 .intro-map{
   position: relative;
   width: 100vw;
@@ -364,10 +347,9 @@ body.header-hidden .globalbar{
   margin-right: calc(50% - 50vw);
   background: var(--brandGreen);
 
-  /* Shopify-like: card clean */
-  border-radius: 18px;
-  border: 1px solid rgba(255,255,255,.22);
-  box-shadow: 0 18px 44px rgba(0,0,0,.16);
+  border: 0;                /* ✅ remove */
+  border-radius: 0;         /* ✅ remove */
+  box-shadow: none;         /* ✅ remove */
 }
 
 .intro-map,
@@ -390,7 +372,7 @@ body.header-hidden .globalbar{
 .scroll-hint{
   margin-top: auto;
   text-align:center;
-  color: rgba(11,13,18,.64);
+  color: rgba(242,231,207,.80);
   font-size: 12px;
   padding: 2px 0 4px;
   display:flex;
@@ -418,12 +400,13 @@ body.header-hidden .globalbar{
 .route-wrap.is-hidden{ opacity: 0; pointer-events: none; }
 .route-wrap.is-shown{ opacity: 1; pointer-events: auto; }
 
+/* ✅ colar mais ao mapa */
 .player{
-  margin-top: 8px; /* ✅ mais perto do mapa */
+  margin-top: 4px;
 }
 
 /* =========================
-   PLAYER (Shopify-like: branco, limpo, sombra)
+   PLAYER
 ========================= */
 .player-card{
   border-radius: 22px;
@@ -461,7 +444,6 @@ body.header-hidden .globalbar{
   text-overflow: ellipsis;
 }
 
-/* ✅ escolha (só 6/7) */
 .player-choice{
   margin-top: 10px;
   display:flex;
@@ -503,7 +485,6 @@ body.header-hidden .globalbar{
   transition: width .35s ease;
 }
 
-/* controlos (mais "UI") */
 .player-controls{
   display:flex;
   align-items:center;
@@ -541,7 +522,6 @@ body.header-hidden .globalbar{
   box-shadow: none;
 }
 
-/* barra fininha do áudio */
 .player-audiobar{
   margin-top: 12px;
   height: 4px;
@@ -573,7 +553,7 @@ body.header-hidden .globalbar{
 
 /* Footer */
 .route-footer{
-  margin-top: 10px;
+  margin-top: 8px; /* ✅ menos gap */
   padding: 2px 2px calc(14px + env(safe-area-inset-bottom));
   color: rgba(15,79,121,.80);
 }
@@ -588,7 +568,6 @@ body.header-hidden .globalbar{
   font-weight: 900;
 }
 
-/* reduz movimento */
 @media (prefers-reduced-motion: reduce){
   .scroll-hint::after{ animation: none; }
   .scroll-overlay__arrow{ animation: none; }
