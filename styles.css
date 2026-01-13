@@ -41,9 +41,9 @@
   --headerH: 0px;
 
   /* ✅ AJUSTES pedidos */
-  --gapHeaderToTitle: 24px;   /* MAIS distância header -> título */
-  --gapTitleToMap: 2px;       /* MENOS distância título/sub -> mapa */
-  --gapMapToCard: 2px;        /* MENOS distância mapa -> card */
+  --gapHeaderToTitle: 24px;
+  --gapTitleToMap: 2px;
+  --gapMapToCard: 2px;
 }
 
 *{ box-sizing:border-box; }
@@ -439,10 +439,10 @@ body.header-hidden .globalbar{
   text-overflow: ellipsis;
 }
 
-/* ✅ Área da alternativa: agora preparada para botão full-width em linha própria */
+/* ✅ Alternativo: sempre em linha própria */
 .player-choice{
   margin-top: 10px;
-  display: block;     /* em vez de flex */
+  display: block;
   width: 100%;
 }
 
@@ -464,7 +464,7 @@ body.header-hidden .globalbar{
   border-color: rgba(15,79,121,.30);
 }
 
-/* ✅ PEDIDO: botão único, ocupa o card todo e o texto fica “ao longo do botão” */
+/* ✅ botão full-width */
 .choice-btn--single{
   width: 100%;
   text-align: left;
@@ -473,6 +473,12 @@ body.header-hidden .globalbar{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ✅ estado disabled visível */
+.choice-btn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
 }
 
 .player-routebar{
