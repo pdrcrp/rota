@@ -61,6 +61,13 @@ body{
   text-rendering: geometricPrecision;
 }
 
+/* ✅ RESET seguro para imagens (evita overflow e “estouro” acidental) */
+img{
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* grain subtil */
 body::before{
   content:"";
@@ -340,17 +347,33 @@ body.header-hidden .globalbar{
   justify-content:center;
 }
 
+/* ✅ FIX PRINCIPAL:
+   - deixa de ser 100vw (gigante em desktop)
+   - fica centrado e com limite de largura
+   - continua full-bleed no mobile via media query abaixo
+*/
 .intro-map{
   position: relative;
-  width: 100vw;
+  width: min(92vw, 720px);
+  height: min(78vh, 720px);
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  margin: 0 auto;
   background: var(--brandGreen);
   border: 0;
   border-radius: 0;
   box-shadow: none;
+}
+
+/* Mobile: podes manter um look mais “full-bleed” se quiseres */
+@media (max-width: 640px){
+  .intro-map{
+    width: 100vw;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+  }
 }
 
 .intro-map,
@@ -365,7 +388,10 @@ body.header-hidden .globalbar{
   inset:0;
   width:100%;
   height:100%;
-  object-fit: cover;
+
+  /* ✅ FIX PRINCIPAL: evita crop/zoom (“estourado”) */
+  object-fit: contain;
+
   opacity: 0;
   transform: translate3d(0, 10px, 0);
 }
