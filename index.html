@@ -88,21 +88,12 @@
       <main class="route-wrap is-hidden" id="route">
         <section class="player" aria-label="Player do percurso">
           <div class="player-card">
+
+            <!-- ✅ Linha 1: nome da paragem + controlos -->
             <div class="player-top">
               <div class="player-meta">
                 <p class="player-kicker" id="playerKicker">Paragem atual</p>
                 <h3 class="player-title" id="playerTitle">—</h3>
-
-                <!-- ✅ Agora: 1 botão toggle (só aparece no 6 e 7) -->
-                <div class="player-choice" id="playerChoice" hidden aria-label="Alternativo">
-                  <button class="choice-btn choice-btn--single" id="choiceAltToggle" type="button" aria-pressed="false">
-                    Alternativo
-                  </button>
-                </div>
-
-                <div class="player-routebar" aria-hidden="true">
-                  <span id="playerRouteBar"></span>
-                </div>
               </div>
 
               <div class="player-controls" aria-label="Controlos">
@@ -110,6 +101,18 @@
                 <button class="ctl play" id="playBtn" type="button" aria-label="Reproduzir/Pausar" title="Play/Pause">▶</button>
                 <button class="ctl" id="nextBtn" type="button" aria-label="Seguinte" title="Seguinte" disabled>⟩</button>
               </div>
+            </div>
+
+            <!-- ✅ Linha 2: botão da paragem alternativa (fica abaixo da linha de cima) -->
+            <div class="player-choice" id="playerChoice" hidden aria-label="Paragem alternativa">
+              <!-- mantém estes IDs para o JS -->
+              <button class="choice-btn" id="choiceMain" type="button" aria-pressed="true">Paragem</button>
+              <button class="choice-btn" id="choiceAlt" type="button" aria-pressed="false">Alternativo</button>
+            </div>
+
+            <!-- ✅ Barra de progresso do percurso (agora fica abaixo da escolha) -->
+            <div class="player-routebar" aria-hidden="true">
+              <span id="playerRouteBar"></span>
             </div>
 
             <div class="player-audiobar" aria-hidden="true">
