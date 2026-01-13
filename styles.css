@@ -40,10 +40,10 @@
 
   --headerH: 0px;
 
-  /* ajustes de espaçamentos (fáceis de afinar depois) */
-  --gapHeaderToTitle: 14px;   /* ✅ MAIS distância header -> título */
-  --gapTitleToMap: 6px;       /* ✅ MENOS distância título/sub -> mapa */
-  --gapMapToCard: 6px;        /* ✅ MENOS distância mapa -> card */
+  /* ✅ AJUSTES pedidos */
+  --gapHeaderToTitle: 24px;   /* MAIS distância header -> título */
+  --gapTitleToMap: 2px;       /* MENOS distância título/sub -> mapa */
+  --gapMapToCard: 2px;        /* MENOS distância mapa -> card */
 }
 
 *{ box-sizing:border-box; }
@@ -347,7 +347,6 @@ body.header-hidden .globalbar{
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
   background: var(--brandGreen);
-
   border: 0;
   border-radius: 0;
   box-shadow: none;
