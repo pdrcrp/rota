@@ -142,7 +142,6 @@ const footerCopy = document.getElementById("footerCopy");
 const intro = document.getElementById("intro");
 const scrollHint = document.getElementById("scrollHint"); // null (ok)
 const scrollOverlay = document.getElementById("scrollOverlay");
-const overlayCard = document.querySelector(".scroll-overlay__card");
 const introTitle = document.getElementById("introTitle");
 const introSub = document.getElementById("introSub");
 
@@ -258,41 +257,23 @@ function showHeaderNow(){
   clampToFooter();
 }
 
-// ====== OVERLAY ======
-function initOverlay() {
-  if (!scrollOverlay) return;
-  scrollOverlay.style.display = "flex";
-  scrollOverlay.classList.remove("is-hidden");
-  scrollOverlay.setAttribute("aria-hidden", "false");
-}
+// ✅ fecha overlay no primeiro gesto (mesmo antes de haver scrollY>2)
+let overlayDismissedByGesture = false;
+function handleFirstGesture(){
+  if (overlayDismissedByGesture) return;
+  overlayDismissedByGesture = true;
 
-function dismissOverlay() {
-  if (!scrollOverlay) return;
-  if (scrollOverlay.classList.contains("is-hidden")) return;
-  scrollOverlay.classList.add("is-hidden");
-  scrollOverlay.setAttribute("aria-hidden", "true");
-  setTimeout(() => { scrollOverlay.style.display = "none"; }, 260);
-}
-
-// ✅ FIX DEFINITIVO: fechar no primeiro gesto, sem bloquear scroll
-let overlayDismissed = false;
-function dismissOnFirstGesture(){
-  if (overlayDismissed) return;
-  overlayDismissed = true;
   showHeaderNow();
   dismissOverlay();
+
+  // ajuda em iOS que às vezes não mexe o scroll no 1º gesto
+  if (window.scrollY < 2) window.scrollTo({ top: 2, behavior: "auto" });
 }
 
-// Captura no window para funcionar mesmo em iOS/Safari
-window.addEventListener("touchstart", dismissOnFirstGesture, { passive: true, capture: true });
-window.addEventListener("touchmove", dismissOnFirstGesture, { passive: true, capture: true });
-window.addEventListener("wheel", dismissOnFirstGesture, { passive: true, capture: true });
-window.addEventListener("pointerdown", dismissOnFirstGesture, { passive: true, capture: true });
+window.addEventListener("wheel", handleFirstGesture, { passive: true });
+document.addEventListener("touchstart", handleFirstGesture, { passive: true });
+document.addEventListener("touchmove", handleFirstGesture, { passive: true });
 
-// Também fecha se clicarem/tocarem no cartão
-overlayCard?.addEventListener("click", dismissOnFirstGesture, { passive: true });
-
-// ====== RESIZE OBSERVER ======
 if (globalBar && "ResizeObserver" in window) {
   const ro = new ResizeObserver(() => {
     syncHeaderHeight();
@@ -465,6 +446,22 @@ function setLang(newLang) {
 }
 langBtns.forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
+// ====== OVERLAY ======
+function initOverlay() {
+  if (!scrollOverlay) return;
+  scrollOverlay.style.display = "flex";
+  scrollOverlay.classList.remove("is-hidden");
+  scrollOverlay.setAttribute("aria-hidden", "false");
+}
+
+function dismissOverlay() {
+  if (!scrollOverlay) return;
+  if (scrollOverlay.classList.contains("is-hidden")) return;
+  scrollOverlay.classList.add("is-hidden");
+  scrollOverlay.setAttribute("aria-hidden", "true");
+  setTimeout(() => { scrollOverlay.style.display = "none"; }, 260);
+}
+
 // ====== RECOMEÇAR ======
 function resetProgress() {
   localStorage.removeItem("currentRequired");
@@ -484,7 +481,7 @@ function resetProgress() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   headerShown = false;
-  overlayDismissed = false;
+  overlayDismissedByGesture = false;
   document.body.classList.add("header-hidden");
   globalBar?.setAttribute("aria-hidden", "true");
   syncHeaderHeight();
