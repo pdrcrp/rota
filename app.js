@@ -103,10 +103,10 @@ const points = [
 let lang = "pt";
 let currentRequired = 1;
 
-// ✅ desbloqueio por ponto obrigatório (independente da variante)
+// desbloqueio por ponto obrigatório
 let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
 
-// ✅ escolha NÃO PERSISTE
+// escolha NÃO persiste
 let currentVariant = "main"; // "main" | "alt"
 
 // persistência do ponto atual
@@ -214,7 +214,7 @@ function setRouteVisible(visible) {
   }
 }
 
-// ====== VARIANT (main/alt) ======
+// ====== VARIANT ======
 function resetVariantForPoint(){
   currentVariant = "main";
 }
@@ -230,7 +230,7 @@ function getPointForCurrent(){
   return base;
 }
 
-// ====== HEADER: show on first scroll + real height ======
+// ====== HEADER show on first scroll + height ======
 let headerShown = false;
 
 function getHeaderH(){
@@ -318,13 +318,11 @@ playerAudio.addEventListener("ended", () => {
   nextBtn.disabled = false;
 });
 
-// ====== CHOICE UI (✅ hard hide) ======
+// ====== CHOICE UI (hard hide) ======
 function updateChoiceUI(){
   const alt = altChoice[currentRequired];
-
   if (!playerChoice || !choiceMain || !choiceAlt) return;
 
-  // ✅ se não houver alternativa: esconder SEMPRE
   if (!alt) {
     playerChoice.hidden = true;
     return;
@@ -363,14 +361,13 @@ function loadCurrentPoint(){
   playerTitle.textContent = p.title[lang];
   playerText.textContent = p.text[lang];
 
-  // ✅ garante que o alternativo só aparece 6/7
   updateChoiceUI();
 
   playerAudio.pause();
   playerAudio.currentTime = 0;
   resetAudioBar();
 
-  // ✅ áudio correto também nos alternativos
+  // áudio correto também nos alternativos
   playerAudio.src = p.audio[lang];
   playerAudio.load();
 
@@ -392,7 +389,7 @@ function goToRequired(n){
   currentRequired = n;
   localStorage.setItem("currentRequired", String(currentRequired));
 
-  // ✅ ao sair/entrar de pontos, reseta variante (resolve o teu bug)
+  // ao mudar de ponto: reseta variante
   resetVariantForPoint();
 
   updateProgressUI();
@@ -561,7 +558,7 @@ function updateIntroAnimation() {
   setRouteVisible(showRoute);
 }
 
-// ====== BLOQUEIO ATÉ AO FOOTER (✅ forte) ======
+// ====== BLOQUEIO ATÉ AO FOOTER ======
 let maxScrollY = null;
 let clampActive = false;
 let isClamping = false;
@@ -579,14 +576,11 @@ function computeFooterClamp(){
     return;
   }
 
-  // ✅ limite = footer encostado ao fundo do ecrã
   const footerRect = routeFooter.getBoundingClientRect();
   const footerBottomAbs = footerRect.bottom + window.scrollY;
-
   const viewportH = window.innerHeight;
-  maxScrollY = Math.max(0, Math.floor(footerBottomAbs - viewportH));
 
-  // atualização do estado
+  maxScrollY = Math.max(0, Math.floor(footerBottomAbs - viewportH));
   clampActive = window.scrollY >= (maxScrollY - 1);
 }
 
@@ -603,15 +597,14 @@ function clampToFooter(){
   clampActive = window.scrollY >= (maxScrollY - 1);
 }
 
-// bloquear wheel (desktop/trackpads)
+// wheel
 window.addEventListener("wheel", (e) => {
   if (maxScrollY == null) return;
   if (!clampActive) return;
-  // wheel down (positive deltaY) tenta ir abaixo do footer
   if (e.deltaY > 0) e.preventDefault();
 }, { passive: false });
 
-// bloquear touch (iOS/Android)
+// touch
 let touchStartY = 0;
 document.addEventListener("touchstart", (e) => {
   if (!e.touches || !e.touches[0]) return;
@@ -621,12 +614,10 @@ document.addEventListener("touchstart", (e) => {
 document.addEventListener("touchmove", (e) => {
   if (maxScrollY == null) return;
 
-  // se já estás no limite e tentas descer mais
   if (window.scrollY >= maxScrollY - 1) {
     if (!e.touches || !e.touches[0]) return;
     const currentY = e.touches[0].clientY;
     const fingerGoingUp = currentY < touchStartY; // finger up => página desce
-
     if (fingerGoingUp) {
       clampActive = true;
       e.preventDefault();
