@@ -33,7 +33,6 @@
 
   --shadow: 0 18px 50px rgba(0,0,0,.12);
 
-  /* começa a 0 (header escondido) e JS mete valor real */
   --headerH: 0px;
 
   /* header creme */
@@ -46,6 +45,14 @@
 
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
+
+/* ✅ reduz “rubber band” */
+html{
+  overscroll-behavior-y: none;
+}
+body{
+  overscroll-behavior-y: none;
+}
 
 body{
   margin:0;
@@ -165,7 +172,6 @@ body.header-hidden .globalbar{
   font-weight: 800;
   transition: transform .15s ease, background .15s ease, border-color .15s ease;
 }
-
 .lang-btn:active{ transform: scale(.98); }
 
 .globalbar .lang-btn,
@@ -289,7 +295,7 @@ body.header-hidden .globalbar{
    INTRO
 ========================= */
 .intro{
-  height: 205vh; /* ligeiramente menor -> menos "ar" */
+  height: 205vh;
   position: relative;
 }
 
@@ -297,8 +303,6 @@ body.header-hidden .globalbar{
   position: sticky;
   top: var(--headerH);
   height: calc(100vh - var(--headerH));
-
-  /* menos padding e menos gap */
   padding: 8px 14px 8px;
   display:flex;
   flex-direction:column;
@@ -337,10 +341,7 @@ body.header-hidden .globalbar{
 
 .intro-visual{
   position: relative;
-
-  /* ✅ reduz gap entre texto e mapa */
   margin-top: 2px;
-
   height: 76vh;
   min-height: 360px;
   display:flex;
@@ -400,10 +401,7 @@ body.header-hidden .globalbar{
 .route-wrap{
   max-width: 820px;
   margin: 0 auto;
-
-  /* ✅ menos espaço para o card encostar mais ao mapa */
-  padding: 0px 14px 10px;
-
+  padding: 0px 14px 0px; /* ✅ sem “ar” extra */
   transition: opacity .35s ease;
 }
 
@@ -418,24 +416,21 @@ body.header-hidden .globalbar{
 }
 
 /* =========================
-   PLAYER (melhor visual)
+   PLAYER
 ========================= */
 .player{
-  margin-top: 4px; /* ✅ menos gap mapa -> card */
+  margin-top: 4px;
 }
 
 .player-card{
   position: relative;
   border-radius: 22px;
   padding: 14px;
-
   background: linear-gradient(180deg, rgba(242,231,207,.92), rgba(242,231,207,.78));
   border: 1px solid var(--cardBorder);
-
   box-shadow:
     0 18px 40px rgba(0,0,0,.10),
     0 2px 0 rgba(255,255,255,.35) inset;
-
   backdrop-filter: blur(10px);
 }
 
@@ -477,8 +472,34 @@ body.header-hidden .globalbar{
   text-overflow: ellipsis;
 }
 
-.player-routebar{
+/* ✅ escolha 6/7 */
+.player-choice{
   margin-top: 10px;
+  display:flex;
+  gap: 10px;
+}
+
+.choice-btn{
+  flex: 1 1 auto;
+  border-radius: 999px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15,79,121,.18);
+  background: rgba(255,255,255,.36);
+  font-weight: 900;
+  color: rgba(15,79,121,.95);
+  cursor: pointer;
+  user-select: none;
+  transition: transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.choice-btn:active{ transform: scale(.99); }
+
+.choice-btn[aria-pressed="true"]{
+  background: rgba(15,79,121,.14);
+  border-color: rgba(15,79,121,.30);
+}
+
+.player-routebar{
+  margin-top: 12px;
   width: min(380px, 56vw);
   height: 7px;
   border-radius: 999px;
@@ -486,6 +507,7 @@ body.header-hidden .globalbar{
   border: 1px solid rgba(15,79,121,.14);
   overflow: hidden;
 }
+
 .player-routebar > span{
   display:block;
   height: 100%;
@@ -518,7 +540,6 @@ body.header-hidden .globalbar{
   box-shadow: 0 8px 18px rgba(0,0,0,.08);
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
-
 .ctl:active{ transform: scale(.98); }
 
 .ctl.play{
@@ -565,14 +586,16 @@ body.header-hidden .globalbar{
 /* Footer */
 .route-footer{
   margin-top: 10px;
-  padding: 2px 2px 0;
+  padding: 2px 2px calc(10px + env(safe-area-inset-bottom));
   color: rgba(15,79,121,.78);
 }
+
 .route-footer__line{
   height: 1px;
   background: rgba(15,79,121,.18);
   margin: 10px 0 8px;
 }
+
 .route-footer__copy{
   margin: 0;
   font-size: 12px;
