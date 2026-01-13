@@ -86,7 +86,7 @@ const points = [
   { id:"optB", kind:"optional", label:"B", x:72, y:64,
     title:{pt:"Livraria Bertrand – Chiado", en:"Livraria Bertrand – Chiado"},
     text:{
-      pt:"Fundada em 1732, a Livraria Bertrand é considerada a livraria mais antiga do mundo ainda em funcionamento. Representa um símbolo da história literária e cultural de Lisboa.",
+      pt:"Fundada em 1732, Livraria Bertrand is considered the oldest operating bookstore in the world. It represents a key symbol of Lisbon’s literary and cultural history.",
       en:"Founded in 1732, Livraria Bertrand is considered the oldest operating bookstore in the world. It represents a key symbol of Lisbon’s literary and cultural history."
     },
     audio:{pt:"audio/pt/optB.mp3", en:"audio/en/optB.mp3"} },
@@ -123,8 +123,6 @@ const nextBtn = document.getElementById("nextBtn");
 const playerAudio = document.getElementById("playerAudio");
 
 const resetBtn = document.getElementById("resetBtn");
-
-/* ✅ agora há botões de idioma no header E no popup */
 const langBtns = [...document.querySelectorAll(".lang-btn")];
 
 const globalTitle = document.getElementById("globalTitle");
@@ -206,31 +204,45 @@ function setRouteVisible(visible) {
   }
 }
 
-/* ✅ mostrar header só depois do 1º scroll */
+/* ✅ header aparece só no 1º scroll */
 let headerShown = false;
 function showHeaderNow(){
   if (headerShown) return;
   headerShown = true;
   document.body.classList.remove("header-hidden");
   globalBar?.setAttribute("aria-hidden", "false");
-  syncHeaderHeight(); // agora sim mede header real e aplica padding-top
+
+  // ✅ aplicar altura real do header ao body (evita “texto por baixo”)
+  syncHeaderHeight();
+  // recalcula animação para não dar “saltos”
+  updateIntroAnimation();
 }
 
 // ====== HEADER HEIGHT REAL ======
 function syncHeaderHeight(){
   if (!globalBar) return;
 
-  // se ainda está escondido, headerH=0 para não empurrar layout
   if (document.body.classList.contains("header-hidden")) {
     document.documentElement.style.setProperty("--headerH", `0px`);
     return;
   }
 
-  const h = Math.ceil(globalBar.getBoundingClientRect().height);
+  // inclui safe-area top (iOS)
+  const cs = getComputedStyle(globalBar);
+  const padTop = parseFloat(cs.paddingTop) || 0;
+  const padBottom = parseFloat(cs.paddingBottom) || 0;
+
+  // altura total já inclui padding, mas em iOS às vezes fica “curta” no primeiro frame
+  const h = Math.ceil(globalBar.getBoundingClientRect().height + (padTop + padBottom) * 0);
   document.documentElement.style.setProperty("--headerH", `${h}px`);
 }
+
 window.addEventListener("resize", syncHeaderHeight);
-window.addEventListener("orientationchange", syncHeaderHeight);
+window.addEventListener("orientationchange", () => {
+  syncHeaderHeight();
+  updateIntroAnimation();
+});
+
 window.addEventListener("load", () => {
   syncHeaderHeight();
   updateIntroAnimation();
@@ -252,7 +264,6 @@ function setAudioBarPct(pct01){
   const pct = Math.max(0, Math.min(1, pct01)) * 100;
   playerAudioBar.style.width = `${pct.toFixed(2)}%`;
 }
-
 function resetAudioBar(){ setAudioBarPct(0); }
 
 playerAudio.addEventListener("timeupdate", () => {
@@ -347,15 +358,11 @@ function applyStaticTexts() {
 
 function setLang(newLang) {
   lang = newLang;
-
-  // ✅ atualiza TODOS os botões (popup + header)
   langBtns.forEach(b =>
     b.setAttribute("aria-pressed", b.dataset.lang === newLang ? "true" : "false")
   );
-
   applyStaticTexts();
 }
-
 langBtns.forEach(btn => btn.addEventListener("click", () => setLang(btn.dataset.lang)));
 
 // ====== OVERLAY ======
@@ -375,6 +382,8 @@ function dismissOverlay() {
 }
 
 // ====== RECOMEÇAR ======
+let mapLockedFinal = false;
+
 function resetProgress() {
   localStorage.removeItem("currentRequired");
   localStorage.removeItem("listenedComplete");
@@ -391,7 +400,6 @@ function resetProgress() {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 
-  // volta ao estado inicial do header + overlay
   headerShown = false;
   document.body.classList.add("header-hidden");
   globalBar?.setAttribute("aria-hidden", "true");
@@ -400,7 +408,6 @@ function resetProgress() {
   initOverlay();
   setRouteVisible(false);
 
-  // desbloqueia o fim do mapa para animar de novo
   mapLockedFinal = false;
 }
 
@@ -410,8 +417,6 @@ resetBtn.addEventListener("click", () => {
 });
 
 // ====== MAPA: estado final sem reset ======
-let mapLockedFinal = false;
-
 function forceMapComplete(){
   for (const layer of introLayers) {
     if (!layer) continue;
@@ -431,7 +436,7 @@ function layerUpdate(layer, t, depthPx) {
 function updateIntroAnimation() {
   if (!intro) return;
 
-  // ✅ se já bloqueaste o final, não recalcules layers (evita “reset”)
+  // se já bloqueou final, mantém
   if (mapLockedFinal) {
     forceMapComplete();
     setRouteVisible(true);
@@ -442,7 +447,6 @@ function updateIntroAnimation() {
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
 
-  // copy
   const c2 = clamp01((scrolled - 0.05) / 0.14);
   const c3 = clamp01((scrolled - 0.10) / 0.16);
 
@@ -452,7 +456,6 @@ function updateIntroAnimation() {
   introSub.style.opacity = String(c3);
   introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
 
-  // layers
   const t1 = clamp01((scrolled - 0.08) / 0.14);
   const t2 = clamp01((scrolled - 0.20) / 0.14);
   const t3 = clamp01((scrolled - 0.32) / 0.14);
@@ -467,13 +470,11 @@ function updateIntroAnimation() {
   layerUpdate(introLayers[4], t5, 10);
   layerUpdate(introLayers[5], t6, 12);
 
-  // hint
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
   }
 
-  // ✅ fim da intro: BLOQUEIA final (não volta a animar), mostra route
   const showRoute = scrolled >= 0.93;
   if (showRoute) {
     mapLockedFinal = true;
@@ -490,7 +491,6 @@ let lastFrameTime = 0;
 const FRAME_MS = 33;
 
 function onScroll(){
-  // 1º scroll: header aparece, overlay desaparece
   if (window.scrollY > 2) {
     showHeaderNow();
     dismissOverlay();
@@ -524,7 +524,6 @@ requestAnimationFrame(() => {
   syncHeaderHeight();
   updateIntroAnimation();
 
-  // se já abrir com scroll (ex: refresh no meio), mostra header
   if (window.scrollY > 2) {
     showHeaderNow();
     dismissOverlay();
