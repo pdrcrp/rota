@@ -1,6 +1,11 @@
 // ====== CONFIGURAÇÃO ======
 const REQUIRED_TOTAL = 9;
-const replacementRules = { 6: "optA", 7: "optB" };
+
+// ✅ alternativos: 6 -> 10, 7 -> 11
+const altChoice = {
+  6: { id: "optA", ptLabel: "Alternativo 10", enLabel: "Alternative 10" },
+  7: { id: "optB", ptLabel: "Alternativo 11", enLabel: "Alternative 11" },
+};
 
 const points = [
   { id:"p1", kind:"required", order:1, label:"1", x:18, y:22,
@@ -75,7 +80,8 @@ const points = [
     },
     audio:{pt:"audio/pt/p9.mp3", en:"audio/en/p9.mp3"} },
 
-  { id:"optA", kind:"optional", label:"A", x:78, y:18,
+  // ✅ optA = alternativo do ponto 6 (10)
+  { id:"optA", kind:"optional", label:"10", x:78, y:18,
     title:{pt:"Museu Arqueológico do Carmo", en:"Carmo Archaeological Museum"},
     text:{
       pt:"Instalado nas ruínas do antigo Convento do Carmo, este museu oferece uma viagem pela história de Lisboa. O espaço combina património arqueológico com uma forte carga simbólica ligada ao terramoto de 1755.",
@@ -83,7 +89,8 @@ const points = [
     },
     audio:{pt:"audio/pt/optA.mp3", en:"audio/en/optA.mp3"} },
 
-  { id:"optB", kind:"optional", label:"B", x:72, y:64,
+  // ✅ optB = alternativo do ponto 7 (11)
+  { id:"optB", kind:"optional", label:"11", x:72, y:64,
     title:{pt:"Livraria Bertrand – Chiado", en:"Livraria Bertrand – Chiado"},
     text:{
       pt:"Fundada em 1732, a Livraria Bertrand é considerada a livraria mais antiga do mundo ainda em funcionamento. Representa um símbolo da história literária e cultural de Lisboa.",
@@ -96,6 +103,9 @@ const points = [
 let lang = "pt";
 let currentRequired = 1;
 let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
+
+// ✅ guarda escolha (main/alt) só para 6 e 7
+let variantMode = JSON.parse(localStorage.getItem("variantMode") || "{}"); // { "6":"alt", "7":"main" }
 
 const saved = localStorage.getItem("currentRequired");
 if (saved) {
@@ -139,6 +149,11 @@ const introSub = document.getElementById("introSub");
 const routeWrap = document.getElementById("route");
 const routeFooter = document.getElementById("routeFooter");
 
+// ✅ escolha
+const playerChoice = document.getElementById("playerChoice");
+const choiceMain = document.getElementById("choiceMain");
+const choiceAlt = document.getElementById("choiceAlt");
+
 const introLayers = [
   document.querySelector(".intro-map .l1"),
   document.querySelector(".intro-map .l2"),
@@ -161,7 +176,8 @@ const ui = {
     nowPlaying: "Ponto atual",
     progress: (n) => `Ponto ${Math.min(n, REQUIRED_TOTAL)} de ${REQUIRED_TOTAL}`,
     reset: "Recomeçar",
-    resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)"
+    resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)",
+    mainBtn: (n) => `Ponto ${n}`,
   },
   en: {
     pageTitle: "Route",
@@ -174,13 +190,15 @@ const ui = {
     nowPlaying: "Current stop",
     progress: (n) => `Stop ${Math.min(n, REQUIRED_TOTAL)} of ${REQUIRED_TOTAL}`,
     reset: "Restart",
-    resetConfirm: "Restart the route? (This will erase your progress.)"
+    resetConfirm: "Restart the route? (This will erase your progress.)",
+    mainBtn: (n) => `Stop ${n}`,
   }
 };
 
 // ====== HELPERS ======
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
 function getRequiredByOrder(order){ return points.find(p => p.kind === "required" && p.order === order); }
+function getById(id){ return points.find(p => p.id === id); }
 function listenedKeyForRequired(order){ return `req-${order}`; }
 function saveListened(){ localStorage.setItem("listenedComplete", JSON.stringify([...listenedComplete])); }
 
@@ -195,6 +213,26 @@ function setRouteVisible(visible) {
   }
 }
 
+// ====== VARIANT (main/alt) ======
+function getVariant(order){
+  return (variantMode && variantMode[String(order)]) ? variantMode[String(order)] : "main";
+}
+function setVariant(order, v){
+  variantMode[String(order)] = v;
+  localStorage.setItem("variantMode", JSON.stringify(variantMode));
+}
+function getPointForCurrent(){
+  const base = getRequiredByOrder(currentRequired);
+  if (!base) return null;
+
+  const alt = altChoice[currentRequired];
+  if (alt && getVariant(currentRequired) === "alt") {
+    const altPoint = getById(alt.id);
+    return altPoint || base;
+  }
+  return base;
+}
+
 // ====== HEADER: mostrar no 1º scroll + altura real ======
 let headerShown = false;
 
@@ -206,12 +244,10 @@ function getHeaderH(){
 
 function syncHeaderHeight(){
   if (!globalBar) return;
-
   if (document.body.classList.contains("header-hidden")) {
     document.documentElement.style.setProperty("--headerH", `0px`);
     return;
   }
-
   const h = Math.ceil(globalBar.getBoundingClientRect().height);
   document.documentElement.style.setProperty("--headerH", `${h}px`);
 }
@@ -225,12 +261,14 @@ function showHeaderNow(){
 
   syncHeaderHeight();
   updateIntroAnimation();
+  computeFooterClamp(); // ✅ recalcula limites quando header aparece
 }
 
 if (globalBar && "ResizeObserver" in window) {
   const ro = new ResizeObserver(() => {
     syncHeaderHeight();
     updateIntroAnimation();
+    computeFooterClamp();
   });
   ro.observe(globalBar);
 }
@@ -238,15 +276,18 @@ if (globalBar && "ResizeObserver" in window) {
 window.addEventListener("resize", () => {
   syncHeaderHeight();
   updateIntroAnimation();
+  computeFooterClamp();
 });
 window.addEventListener("orientationchange", () => {
   syncHeaderHeight();
   updateIntroAnimation();
+  computeFooterClamp();
 });
 
 window.addEventListener("load", () => {
   syncHeaderHeight();
   updateIntroAnimation();
+  computeFooterClamp();
 }, { once: true });
 
 // ====== PROGRESSO ======
@@ -285,14 +326,54 @@ playerAudio.addEventListener("ended", () => {
   nextBtn.disabled = false;
 });
 
+// ====== UI escolha no ponto 6/7 ======
+function updateChoiceUI(){
+  const alt = altChoice[currentRequired];
+  if (!playerChoice || !choiceMain || !choiceAlt) return;
+
+  if (!alt) {
+    playerChoice.hidden = true;
+    return;
+  }
+
+  playerChoice.hidden = false;
+
+  // labels
+  choiceMain.textContent = ui[lang].mainBtn(currentRequired);
+  choiceAlt.textContent = (lang === "pt") ? alt.ptLabel : alt.enLabel;
+
+  const v = getVariant(currentRequired);
+  choiceMain.setAttribute("aria-pressed", v === "main" ? "true" : "false");
+  choiceAlt.setAttribute("aria-pressed", v === "alt" ? "true" : "false");
+}
+
+choiceMain?.addEventListener("click", () => {
+  if (!altChoice[currentRequired]) return;
+  if (getVariant(currentRequired) === "main") return;
+  setVariant(currentRequired, "main");
+  updateChoiceUI();
+  loadCurrentPoint();
+});
+
+choiceAlt?.addEventListener("click", () => {
+  if (!altChoice[currentRequired]) return;
+  if (getVariant(currentRequired) === "alt") return;
+  setVariant(currentRequired, "alt");
+  updateChoiceUI();
+  loadCurrentPoint();
+});
+
 // ====== PLAYER ======
 function loadCurrentPoint(){
-  const p = getRequiredByOrder(currentRequired);
+  const p = getPointForCurrent();
   if (!p) return;
 
   playerKicker.textContent = ui[lang].nowPlaying;
   playerTitle.textContent = p.title[lang];
   playerText.textContent = p.text[lang];
+
+  // escolha aparece/atualiza
+  updateChoiceUI();
 
   playerAudio.pause();
   playerAudio.currentTime = 0;
@@ -321,6 +402,7 @@ prevBtn.addEventListener("click", () => {
   localStorage.setItem("currentRequired", String(currentRequired));
   updateProgressUI();
   loadCurrentPoint();
+  computeFooterClamp();
 });
 
 playBtn.addEventListener("click", togglePlay);
@@ -332,6 +414,7 @@ nextBtn.addEventListener("click", () => {
     localStorage.setItem("currentRequired", String(currentRequired));
     updateProgressUI();
     loadCurrentPoint();
+    computeFooterClamp();
   }
 });
 
@@ -354,6 +437,7 @@ function applyStaticTexts() {
 
   updateProgressUI();
   loadCurrentPoint();
+  computeFooterClamp();
 }
 
 function setLang(newLang) {
@@ -385,9 +469,11 @@ function dismissOverlay() {
 function resetProgress() {
   localStorage.removeItem("currentRequired");
   localStorage.removeItem("listenedComplete");
+  localStorage.removeItem("variantMode");
 
   currentRequired = 1;
   listenedComplete = new Set();
+  variantMode = {};
 
   playerAudio.pause();
   playerAudio.currentTime = 0;
@@ -406,10 +492,9 @@ function resetProgress() {
   initOverlay();
   setRouteVisible(false);
 
-  // reset do bloqueio
-  scrollLockActive = false;
-  scrollLockY = null;
-  lastScrollY = window.scrollY;
+  // reset clamp
+  maxScrollY = null;
+  clampActive = false;
 }
 
 resetBtn.addEventListener("click", () => {
@@ -440,7 +525,6 @@ function updateIntroAnimation() {
   const headerH = getHeaderH();
   const rect = intro.getBoundingClientRect();
 
-  // se já passaste a intro: manter mapa completo e mostrar rota
   const pastIntro = rect.bottom <= (headerH + 1);
 
   if (pastIntro) {
@@ -449,7 +533,6 @@ function updateIntroAnimation() {
     return;
   }
 
-  // dentro da intro -> animação normal (inclui reverse)
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
 
@@ -485,60 +568,69 @@ function updateIntroAnimation() {
   setRouteVisible(showRoute);
 }
 
-// ====== BLOQUEIO NO FIM (quando chega ao footer) ======
-let scrollLockActive = false;
-let scrollLockY = null;
-let lastScrollY = 0;
-let isAdjustingScroll = false;
+// ====== CLAMP NO FOOTER (travar MESMO no footer) ======
+let maxScrollY = null;
+let clampActive = false;
+let isClamping = false;
 
-function getFooterLockTriggerY(){
-  if (!routeFooter) return null;
-  const r = routeFooter.getBoundingClientRect();
-  return r.top + window.scrollY; // posição absoluta do topo do footer
-}
-
-function updateScrollLock(){
-  if (!routeFooter) return;
-
-  // só faz sentido quando a rota já está visível
-  const routeShown = routeWrap && routeWrap.classList.contains("is-shown");
-  if (!routeShown) {
-    scrollLockActive = false;
-    scrollLockY = null;
+// calcula o Y máximo: topo do footer alinhado ao topo visível (logo após header)
+function computeFooterClamp(){
+  if (!routeFooter || !routeWrap) {
+    maxScrollY = null;
     return;
   }
 
-  const triggerY = getFooterLockTriggerY();
-  if (triggerY == null) return;
-
-  // quando a zona do footer entra no ecrã, ativa lock naquele ponto
-  const footerRect = routeFooter.getBoundingClientRect();
-  const footerInView = footerRect.top <= (window.innerHeight * 0.78);
-
-  if (!scrollLockActive && footerInView) {
-    scrollLockActive = true;
-    // trava exatamente onde estás (fica com o footer visível)
-    scrollLockY = window.scrollY;
+  const routeShown = routeWrap.classList.contains("is-shown");
+  if (!routeShown) {
+    maxScrollY = null;
+    clampActive = false;
+    return;
   }
 
-  // se estiver locked e o utilizador fizer scroll para cima, destrava
-  if (scrollLockActive && scrollLockY != null) {
-    const goingUp = window.scrollY < lastScrollY - 2;
-    if (goingUp) {
-      scrollLockActive = false;
-      scrollLockY = null;
-    }
+  // posição absoluta do topo do footer
+  const footerTopAbs = routeFooter.getBoundingClientRect().top + window.scrollY;
+
+  // queremos “travar no footer” -> parar quando o topo do footer chega ao topo do viewport (depois do header)
+  const headerH = getHeaderH();
+  maxScrollY = Math.max(0, Math.floor(footerTopAbs - headerH));
+}
+
+function clampToFooter(){
+  if (maxScrollY == null) return;
+
+  if (window.scrollY >= (maxScrollY - 1)) {
+    clampActive = true;
+  } else {
+    clampActive = false;
   }
 
-  // se locked e tenta ir para baixo, volta ao lockY
-  if (scrollLockActive && scrollLockY != null && window.scrollY > scrollLockY + 1) {
-    if (!isAdjustingScroll) {
-      isAdjustingScroll = true;
-      window.scrollTo({ top: scrollLockY, behavior: "auto" });
-      requestAnimationFrame(() => { isAdjustingScroll = false; });
-    }
+  if (window.scrollY > maxScrollY + 1) {
+    if (isClamping) return;
+    isClamping = true;
+    window.scrollTo({ top: maxScrollY, behavior: "auto" });
+    requestAnimationFrame(() => { isClamping = false; });
   }
 }
+
+// ✅ iOS: bloquear “scroll para baixo” quando já estás no limite
+let touchStartY = 0;
+document.addEventListener("touchstart", (e) => {
+  if (!e.touches || !e.touches[0]) return;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener("touchmove", (e) => {
+  if (!clampActive || maxScrollY == null) return;
+  if (!e.touches || !e.touches[0]) return;
+
+  const currentY = e.touches[0].clientY;
+  const fingerGoingUp = currentY < touchStartY; // finger up => page down
+
+  // se estás no limite e tentas ir MAIS para baixo, bloqueia
+  if (fingerGoingUp && window.scrollY >= maxScrollY - 1) {
+    e.preventDefault();
+  }
+}, { passive: false });
 
 // ====== SCROLL LOOP ======
 let ticking = false;
@@ -551,14 +643,13 @@ function onScroll(){
     dismissOverlay();
   }
 
-  lastScrollY = window.scrollY;
-
   if (!ticking) {
     ticking = true;
     requestAnimationFrame((now) => {
       if (now - lastFrameTime >= FRAME_MS) {
         updateIntroAnimation();
-        updateScrollLock();
+        computeFooterClamp();
+        clampToFooter();
         lastFrameTime = now;
       }
       ticking = false;
@@ -577,12 +668,14 @@ loadCurrentPoint();
 setRouteVisible(false);
 initOverlay();
 updateIntroAnimation();
-updateScrollLock();
+computeFooterClamp();
+clampToFooter();
 
 requestAnimationFrame(() => {
   syncHeaderHeight();
   updateIntroAnimation();
-  updateScrollLock();
+  computeFooterClamp();
+  clampToFooter();
 
   if (window.scrollY > 2) {
     showHeaderNow();
