@@ -1,10 +1,10 @@
 // ====== CONFIGURAÇÃO ======
 const REQUIRED_TOTAL = 9;
 
-// ✅ alternativos: 6 -> 10, 7 -> 11
+// ✅ alternativos: 6 -> 10, 7 -> 11 (mantém ids optA/optB)
 const altChoice = {
-  6: { id: "optA", ptLabel: "Alternativo 10", enLabel: "Alternative 10" },
-  7: { id: "optB", ptLabel: "Alternativo 11", enLabel: "Alternative 11" },
+  6: { id: "optA" },
+  7: { id: "optB" },
 };
 
 const points = [
@@ -112,6 +112,7 @@ if (saved) {
 
 // ====== ELEMENTOS ======
 const globalBar = document.getElementById("globalBar");
+
 const progressText = document.getElementById("progressText");
 const progressBar = document.getElementById("progressBar");
 
@@ -124,6 +125,7 @@ const playerAudioBar = document.getElementById("playerAudioBar");
 const prevBtn = document.getElementById("prevBtn");
 const playBtn = document.getElementById("playBtn");
 const nextBtn = document.getElementById("nextBtn");
+
 const playerAudio = document.getElementById("playerAudio");
 
 const resetBtn = document.getElementById("resetBtn");
@@ -162,30 +164,37 @@ const ui = {
   pt: {
     pageTitle: "Percurso",
     kicker: "Postais por Lisboa",
-    overlayTitle: "Bem-vindo ✨",
+    overlayTitle: "Bem-vindo!",
     overlayText: "Faz scroll para começares a descobrir o mapa",
     introTitle: "Segue a cidade\nponto a ponto",
     introSub: "Ouve a história antes de entrar. Avança no percurso ao teu ritmo.",
     footer: "Postais por Lisboa",
-    nowPlaying: "Ponto atual",
-    progress: (n) => `Ponto ${Math.min(n, REQUIRED_TOTAL)} de ${REQUIRED_TOTAL}`,
+
+    // ✅ sugestão de naming: Paragens
+    nowPlaying: "Paragem atual",
+    progress: (n) => `Paragem ${Math.min(n, REQUIRED_TOTAL)} de ${REQUIRED_TOTAL}`,
     reset: "Recomeçar",
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)",
-    mainBtn: (n) => `Ponto ${n}`,
+
+    choiceMain: (n, title) => `Paragem ${n} — ${title}`,
+    choiceAlt: (altTitle) => `Alternativo — ${altTitle}`,
   },
   en: {
     pageTitle: "Route",
     kicker: "Postcards from Lisbon",
-    overlayTitle: "Welcome ✨",
+    overlayTitle: "Welcome!",
     overlayText: "Scroll to start discovering the map",
     introTitle: "Follow the city\npoint by point",
     introSub: "Listen before you enter. Move through the route at your own pace.",
     footer: "Postcards from Lisbon",
+
     nowPlaying: "Current stop",
     progress: (n) => `Stop ${Math.min(n, REQUIRED_TOTAL)} of ${REQUIRED_TOTAL}`,
     reset: "Restart",
     resetConfirm: "Restart the route? (This will erase your progress.)",
-    mainBtn: (n) => `Stop ${n}`,
+
+    choiceMain: (n, title) => `Stop ${n} — ${title}`,
+    choiceAlt: (altTitle) => `Alternative — ${altTitle}`,
   }
 };
 
@@ -293,12 +302,10 @@ playerAudio.addEventListener("timeupdate", () => {
   if (!Number.isFinite(d) || d <= 0) return;
   setAudioBarPct(playerAudio.currentTime / d);
 });
-
 playerAudio.addEventListener("loadedmetadata", () => {
   const d = playerAudio.duration;
   if (!Number.isFinite(d) || d <= 0) resetAudioBar();
 });
-
 playerAudio.addEventListener("ended", () => {
   setAudioBarPct(1);
   listenedComplete.add(listenedKeyForRequired(currentRequired));
@@ -316,9 +323,14 @@ function updateChoiceUI(){
     return;
   }
 
+  const base = getRequiredByOrder(currentRequired);
+  const altP = getById(alt.id);
+
   playerChoice.hidden = false;
-  choiceMain.textContent = ui[lang].mainBtn(currentRequired);
-  choiceAlt.textContent = (lang === "pt") ? alt.ptLabel : alt.enLabel;
+
+  // ✅ Botões com NOME do alternativo (melhor solução)
+  choiceMain.textContent = ui[lang].choiceMain(currentRequired, base?.title?.[lang] || "");
+  choiceAlt.textContent = ui[lang].choiceAlt(altP?.title?.[lang] || "");
 
   choiceMain.setAttribute("aria-pressed", currentVariant === "main" ? "true" : "false");
   choiceAlt.setAttribute("aria-pressed", currentVariant === "alt" ? "true" : "false");
