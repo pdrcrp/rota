@@ -80,8 +80,8 @@ const points = [
     },
     audio:{pt:"audio/pt/p9.mp3", en:"audio/en/p9.mp3"} },
 
-  // ✅ optA = alternativo do ponto 6 (10)
-  { id:"optA", kind:"optional", label:"10", x:78, y:18,
+  // ✅ alternativo do 6 (10)
+  { id:"optA", kind:"optional", label:"10",
     title:{pt:"Museu Arqueológico do Carmo", en:"Carmo Archaeological Museum"},
     text:{
       pt:"Instalado nas ruínas do antigo Convento do Carmo, este museu oferece uma viagem pela história de Lisboa. O espaço combina património arqueológico com uma forte carga simbólica ligada ao terramoto de 1755.",
@@ -89,8 +89,8 @@ const points = [
     },
     audio:{pt:"audio/pt/optA.mp3", en:"audio/en/optA.mp3"} },
 
-  // ✅ optB = alternativo do ponto 7 (11)
-  { id:"optB", kind:"optional", label:"11", x:72, y:64,
+  // ✅ alternativo do 7 (11)
+  { id:"optB", kind:"optional", label:"11",
     title:{pt:"Livraria Bertrand – Chiado", en:"Livraria Bertrand – Chiado"},
     text:{
       pt:"Fundada em 1732, a Livraria Bertrand é considerada a livraria mais antiga do mundo ainda em funcionamento. Representa um símbolo da história literária e cultural de Lisboa.",
@@ -103,10 +103,10 @@ const points = [
 let lang = "pt";
 let currentRequired = 1;
 
-// ✅ progresso desbloqueado por ponto obrigatório (6/7 conta igual mesmo que seja alternativo)
+// ✅ desbloqueio por ponto obrigatório (independente da variante)
 let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
 
-// ✅ escolha NÃO PERSISTE (reseta ao sair do ponto)
+// ✅ escolha NÃO PERSISTE
 let currentVariant = "main"; // "main" | "alt"
 
 // persistência do ponto atual
@@ -118,7 +118,6 @@ if (saved) {
 
 // ====== ELEMENTOS ======
 const globalBar = document.getElementById("globalBar");
-
 const progressText = document.getElementById("progressText");
 const progressBar = document.getElementById("progressBar");
 
@@ -131,7 +130,6 @@ const playerAudioBar = document.getElementById("playerAudioBar");
 const prevBtn = document.getElementById("prevBtn");
 const playBtn = document.getElementById("playBtn");
 const nextBtn = document.getElementById("nextBtn");
-
 const playerAudio = document.getElementById("playerAudio");
 
 const resetBtn = document.getElementById("resetBtn");
@@ -216,9 +214,8 @@ function setRouteVisible(visible) {
   }
 }
 
-// ====== VARIANT (main/alt) — NÃO PERSISTE ======
-function resetVariantForPoint(order){
-  // sempre que entras num ponto novo, começa no "main"
+// ====== VARIANT (main/alt) ======
+function resetVariantForPoint(){
   currentVariant = "main";
 }
 
@@ -228,13 +225,12 @@ function getPointForCurrent(){
 
   const alt = altChoice[currentRequired];
   if (alt && currentVariant === "alt") {
-    const altPoint = getById(alt.id);
-    return altPoint || base;
+    return getById(alt.id) || base;
   }
   return base;
 }
 
-// ====== HEADER: mostrar no 1º scroll + altura real ======
+// ====== HEADER: show on first scroll + real height ======
 let headerShown = false;
 
 function getHeaderH(){
@@ -263,33 +259,28 @@ function showHeaderNow(){
   syncHeaderHeight();
   updateIntroAnimation();
   computeFooterClamp();
+  clampToFooter();
 }
 
 if (globalBar && "ResizeObserver" in window) {
   const ro = new ResizeObserver(() => {
     syncHeaderHeight();
-    updateIntroAnimation();
     computeFooterClamp();
+    clampToFooter();
   });
   ro.observe(globalBar);
 }
 
 window.addEventListener("resize", () => {
   syncHeaderHeight();
-  updateIntroAnimation();
   computeFooterClamp();
+  clampToFooter();
 });
 window.addEventListener("orientationchange", () => {
   syncHeaderHeight();
-  updateIntroAnimation();
   computeFooterClamp();
+  clampToFooter();
 });
-
-window.addEventListener("load", () => {
-  syncHeaderHeight();
-  updateIntroAnimation();
-  computeFooterClamp();
-}, { once: true });
 
 // ====== PROGRESSO ======
 function updateProgressUI(){
@@ -302,7 +293,7 @@ function updateProgressUI(){
   playerRouteBar.style.width = `${pct.toFixed(1)}%`;
 }
 
-// ====== AUDIO PROGRESS BAR ======
+// ====== AUDIO BAR ======
 function setAudioBarPct(pct01){
   const pct = Math.max(0, Math.min(1, pct01)) * 100;
   playerAudioBar.style.width = `${pct.toFixed(2)}%`;
@@ -327,19 +318,19 @@ playerAudio.addEventListener("ended", () => {
   nextBtn.disabled = false;
 });
 
-// ====== UI escolha no ponto 6/7 ======
+// ====== CHOICE UI (✅ hard hide) ======
 function updateChoiceUI(){
   const alt = altChoice[currentRequired];
+
   if (!playerChoice || !choiceMain || !choiceAlt) return;
 
+  // ✅ se não houver alternativa: esconder SEMPRE
   if (!alt) {
     playerChoice.hidden = true;
     return;
   }
 
   playerChoice.hidden = false;
-
-  // labels
   choiceMain.textContent = ui[lang].mainBtn(currentRequired);
   choiceAlt.textContent = (lang === "pt") ? alt.ptLabel : alt.enLabel;
 
@@ -372,13 +363,14 @@ function loadCurrentPoint(){
   playerTitle.textContent = p.title[lang];
   playerText.textContent = p.text[lang];
 
+  // ✅ garante que o alternativo só aparece 6/7
   updateChoiceUI();
 
   playerAudio.pause();
   playerAudio.currentTime = 0;
   resetAudioBar();
 
-  // ✅ aqui é onde o alternativo liga o áudio certo (optA/optB têm audio próprio)
+  // ✅ áudio correto também nos alternativos
   playerAudio.src = p.audio[lang];
   playerAudio.load();
 
@@ -400,12 +392,13 @@ function goToRequired(n){
   currentRequired = n;
   localStorage.setItem("currentRequired", String(currentRequired));
 
-  // ✅ MUITO IMPORTANTE: ao mudar de ponto, reseta sempre para "main"
-  resetVariantForPoint(currentRequired);
+  // ✅ ao sair/entrar de pontos, reseta variante (resolve o teu bug)
+  resetVariantForPoint();
 
   updateProgressUI();
   loadCurrentPoint();
   computeFooterClamp();
+  clampToFooter();
 }
 
 prevBtn.addEventListener("click", () => {
@@ -417,9 +410,7 @@ playBtn.addEventListener("click", togglePlay);
 
 nextBtn.addEventListener("click", () => {
   if (nextBtn.disabled) return;
-  if (currentRequired < REQUIRED_TOTAL) {
-    goToRequired(currentRequired + 1);
-  }
+  if (currentRequired < REQUIRED_TOTAL) goToRequired(currentRequired + 1);
 });
 
 // ====== IDIOMA ======
@@ -442,6 +433,7 @@ function applyStaticTexts() {
   updateProgressUI();
   loadCurrentPoint();
   computeFooterClamp();
+  clampToFooter();
 }
 
 function setLang(newLang) {
@@ -513,7 +505,7 @@ function forceMapComplete(){
   }
 }
 
-// ====== INTRO: animação com scroll (reverse OK) ======
+// ====== INTRO: animação scroll (com reverse) ======
 function layerUpdate(layer, t, depthPx) {
   if (!layer) return;
   layer.style.opacity = String(t);
@@ -569,7 +561,7 @@ function updateIntroAnimation() {
   setRouteVisible(showRoute);
 }
 
-// ====== CLAMP NO FOOTER (travar MESMO no footer) ======
+// ====== BLOQUEIO ATÉ AO FOOTER (✅ forte) ======
 let maxScrollY = null;
 let clampActive = false;
 let isClamping = false;
@@ -587,15 +579,19 @@ function computeFooterClamp(){
     return;
   }
 
-  const footerTopAbs = routeFooter.getBoundingClientRect().top + window.scrollY;
-  const headerH = getHeaderH();
-  maxScrollY = Math.max(0, Math.floor(footerTopAbs - headerH));
+  // ✅ limite = footer encostado ao fundo do ecrã
+  const footerRect = routeFooter.getBoundingClientRect();
+  const footerBottomAbs = footerRect.bottom + window.scrollY;
+
+  const viewportH = window.innerHeight;
+  maxScrollY = Math.max(0, Math.floor(footerBottomAbs - viewportH));
+
+  // atualização do estado
+  clampActive = window.scrollY >= (maxScrollY - 1);
 }
 
 function clampToFooter(){
   if (maxScrollY == null) return;
-
-  clampActive = window.scrollY >= (maxScrollY - 1);
 
   if (window.scrollY > maxScrollY + 1) {
     if (isClamping) return;
@@ -603,9 +599,19 @@ function clampToFooter(){
     window.scrollTo({ top: maxScrollY, behavior: "auto" });
     requestAnimationFrame(() => { isClamping = false; });
   }
+
+  clampActive = window.scrollY >= (maxScrollY - 1);
 }
 
-// iOS: bloquear overscroll quando já estás no limite
+// bloquear wheel (desktop/trackpads)
+window.addEventListener("wheel", (e) => {
+  if (maxScrollY == null) return;
+  if (!clampActive) return;
+  // wheel down (positive deltaY) tenta ir abaixo do footer
+  if (e.deltaY > 0) e.preventDefault();
+}, { passive: false });
+
+// bloquear touch (iOS/Android)
 let touchStartY = 0;
 document.addEventListener("touchstart", (e) => {
   if (!e.touches || !e.touches[0]) return;
@@ -613,14 +619,19 @@ document.addEventListener("touchstart", (e) => {
 }, { passive: true });
 
 document.addEventListener("touchmove", (e) => {
-  if (!clampActive || maxScrollY == null) return;
-  if (!e.touches || !e.touches[0]) return;
+  if (maxScrollY == null) return;
 
-  const currentY = e.touches[0].clientY;
-  const fingerGoingUp = currentY < touchStartY; // finger up => page down
+  // se já estás no limite e tentas descer mais
+  if (window.scrollY >= maxScrollY - 1) {
+    if (!e.touches || !e.touches[0]) return;
+    const currentY = e.touches[0].clientY;
+    const fingerGoingUp = currentY < touchStartY; // finger up => página desce
 
-  if (fingerGoingUp && window.scrollY >= maxScrollY - 1) {
-    e.preventDefault();
+    if (fingerGoingUp) {
+      clampActive = true;
+      e.preventDefault();
+      clampToFooter();
+    }
   }
 }, { passive: false });
 
@@ -655,9 +666,7 @@ syncHeaderHeight();
 
 applyStaticTexts();
 updateProgressUI();
-
-// ao iniciar, também começa no main (se calhar estás no 6/7 por persistência do currentRequired)
-resetVariantForPoint(currentRequired);
+resetVariantForPoint();
 loadCurrentPoint();
 
 setRouteVisible(false);
