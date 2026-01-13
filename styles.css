@@ -32,7 +32,6 @@
 
   --surface: rgba(255,255,255,.92);
   --border: rgba(15,79,121,.14);
-
   --shadowMd: 0 18px 44px rgba(0,0,0,.14);
 
   /* header creme */
@@ -40,6 +39,11 @@
   --headerText: #0f4f79;
 
   --headerH: 0px;
+
+  /* ajustes de espaçamentos (fáceis de afinar depois) */
+  --gapHeaderToTitle: 14px;   /* ✅ MAIS distância header -> título */
+  --gapTitleToMap: 6px;       /* ✅ MENOS distância título/sub -> mapa */
+  --gapMapToCard: 6px;        /* ✅ MENOS distância mapa -> card */
 }
 
 *{ box-sizing:border-box; }
@@ -52,7 +56,7 @@ body{
   margin:0;
   font-family: var(--fontUI);
   color: var(--text);
-  background: var(--bg); /* ✅ verde sólido */
+  background: var(--bg);
   padding-top: var(--headerH);
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
@@ -232,12 +236,6 @@ body.header-hidden .globalbar{
   justify-content:space-between;
   gap: 10px;
 }
-.overlay-brand{ display:flex; align-items:center; gap: 8px; }
-.badge-dot{
-  width: 10px; height: 10px; border-radius: 999px;
-  background: rgba(15,79,121,.92);
-  box-shadow: 0 0 0 6px rgba(15,79,121,.10);
-}
 
 .scroll-overlay__title{
   margin: 0;
@@ -275,7 +273,7 @@ body.header-hidden .globalbar{
 }
 
 /* =========================
-   INTRO (menos gap + texto bege)
+   INTRO
 ========================= */
 .intro{
   height: 200vh;
@@ -286,14 +284,17 @@ body.header-hidden .globalbar{
   position: sticky;
   top: var(--headerH);
   height: calc(100vh - var(--headerH));
-  padding: 8px 14px 10px;   /* ✅ menos padding topo */
+  padding: 10px 14px 10px;
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  gap: 4px;                 /* ✅ menos gap */
 }
 
-.intro-top{ text-align:center; }
+/* ✅ MAIS distância do header até ao título */
+.intro-top{
+  margin-top: var(--gapHeaderToTitle);
+  text-align:center;
+}
 
 .intro-copy{
   margin: 0 auto;
@@ -301,7 +302,7 @@ body.header-hidden .globalbar{
   text-align: center;
 }
 
-/* ✅ título/subtitle BEGE */
+/* título/subtitle BEGE */
 .intro-title{
   margin: 0 0 2px;
   font-family: var(--fontEditorial);
@@ -326,10 +327,10 @@ body.header-hidden .globalbar{
   will-change: transform, opacity;
 }
 
-/* ✅ mais perto do texto */
+/* ✅ MENOS gap título -> mapa */
 .intro-visual{
   position: relative;
-  margin-top: 0px;          /* ✅ remove espaço */
+  margin-top: var(--gapTitleToMap);
   height: 78vh;
   min-height: 320px;
   display:flex;
@@ -337,7 +338,7 @@ body.header-hidden .globalbar{
   justify-content:center;
 }
 
-/* ✅ MAPA sem moldura/quadrado */
+/* MAPA sem moldura/quadrado */
 .intro-map{
   position: relative;
   width: 100vw;
@@ -347,9 +348,9 @@ body.header-hidden .globalbar{
   margin-right: calc(50% - 50vw);
   background: var(--brandGreen);
 
-  border: 0;                /* ✅ remove */
-  border-radius: 0;         /* ✅ remove */
-  box-shadow: none;         /* ✅ remove */
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .intro-map,
@@ -400,9 +401,9 @@ body.header-hidden .globalbar{
 .route-wrap.is-hidden{ opacity: 0; pointer-events: none; }
 .route-wrap.is-shown{ opacity: 1; pointer-events: auto; }
 
-/* ✅ colar mais ao mapa */
+/* ✅ MENOS distância mapa -> card */
 .player{
-  margin-top: 4px;
+  margin-top: var(--gapMapToCard);
 }
 
 /* =========================
@@ -444,6 +445,7 @@ body.header-hidden .globalbar{
   text-overflow: ellipsis;
 }
 
+/* switch Paragem / Alternativo */
 .player-choice{
   margin-top: 10px;
   display:flex;
@@ -553,7 +555,7 @@ body.header-hidden .globalbar{
 
 /* Footer */
 .route-footer{
-  margin-top: 8px; /* ✅ menos gap */
+  margin-top: 8px;
   padding: 2px 2px calc(14px + env(safe-area-inset-bottom));
   color: rgba(15,79,121,.80);
 }
