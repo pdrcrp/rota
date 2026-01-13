@@ -80,7 +80,6 @@ const points = [
     },
     audio:{pt:"audio/pt/p9.mp3", en:"audio/en/p9.mp3"} },
 
-  // ✅ alternativo do 6 (10)
   { id:"optA", kind:"optional", label:"10",
     title:{pt:"Museu Arqueológico do Carmo", en:"Carmo Archaeological Museum"},
     text:{
@@ -89,7 +88,6 @@ const points = [
     },
     audio:{pt:"audio/pt/optA.mp3", en:"audio/en/optA.mp3"} },
 
-  // ✅ alternativo do 7 (11)
   { id:"optB", kind:"optional", label:"11",
     title:{pt:"Livraria Bertrand – Chiado", en:"Livraria Bertrand – Chiado"},
     text:{
@@ -103,13 +101,9 @@ const points = [
 let lang = "pt";
 let currentRequired = 1;
 
-// desbloqueio por ponto obrigatório
 let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
+let currentVariant = "main";
 
-// escolha NÃO persiste
-let currentVariant = "main"; // "main" | "alt"
-
-// persistência do ponto atual
 const saved = localStorage.getItem("currentRequired");
 if (saved) {
   const n = Number(saved);
@@ -150,7 +144,6 @@ const introSub = document.getElementById("introSub");
 const routeWrap = document.getElementById("route");
 const routeFooter = document.getElementById("routeFooter");
 
-// escolha
 const playerChoice = document.getElementById("playerChoice");
 const choiceMain = document.getElementById("choiceMain");
 const choiceAlt = document.getElementById("choiceAlt");
@@ -215,18 +208,13 @@ function setRouteVisible(visible) {
 }
 
 // ====== VARIANT ======
-function resetVariantForPoint(){
-  currentVariant = "main";
-}
+function resetVariantForPoint(){ currentVariant = "main"; }
 
 function getPointForCurrent(){
   const base = getRequiredByOrder(currentRequired);
   if (!base) return null;
-
   const alt = altChoice[currentRequired];
-  if (alt && currentVariant === "alt") {
-    return getById(alt.id) || base;
-  }
+  if (alt && currentVariant === "alt") return getById(alt.id) || base;
   return base;
 }
 
@@ -318,7 +306,7 @@ playerAudio.addEventListener("ended", () => {
   nextBtn.disabled = false;
 });
 
-// ====== CHOICE UI (hard hide) ======
+// ====== CHOICE UI ======
 function updateChoiceUI(){
   const alt = altChoice[currentRequired];
   if (!playerChoice || !choiceMain || !choiceAlt) return;
@@ -367,7 +355,6 @@ function loadCurrentPoint(){
   playerAudio.currentTime = 0;
   resetAudioBar();
 
-  // áudio correto também nos alternativos
   playerAudio.src = p.audio[lang];
   playerAudio.load();
 
@@ -389,7 +376,6 @@ function goToRequired(n){
   currentRequired = n;
   localStorage.setItem("currentRequired", String(currentRequired));
 
-  // ao mudar de ponto: reseta variante
   resetVariantForPoint();
 
   updateProgressUI();
@@ -597,14 +583,12 @@ function clampToFooter(){
   clampActive = window.scrollY >= (maxScrollY - 1);
 }
 
-// wheel
 window.addEventListener("wheel", (e) => {
   if (maxScrollY == null) return;
   if (!clampActive) return;
   if (e.deltaY > 0) e.preventDefault();
 }, { passive: false });
 
-// touch
 let touchStartY = 0;
 document.addEventListener("touchstart", (e) => {
   if (!e.touches || !e.touches[0]) return;
@@ -617,7 +601,7 @@ document.addEventListener("touchmove", (e) => {
   if (window.scrollY >= maxScrollY - 1) {
     if (!e.touches || !e.touches[0]) return;
     const currentY = e.touches[0].clientY;
-    const fingerGoingUp = currentY < touchStartY; // finger up => página desce
+    const fingerGoingUp = currentY < touchStartY;
     if (fingerGoingUp) {
       clampActive = true;
       e.preventDefault();
