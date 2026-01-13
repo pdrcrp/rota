@@ -86,7 +86,7 @@ const points = [
   { id:"optB", kind:"optional", label:"B", x:72, y:64,
     title:{pt:"Livraria Bertrand – Chiado", en:"Livraria Bertrand – Chiado"},
     text:{
-      pt:"Fundada em 1732, Livraria Bertrand is considered the oldest operating bookstore in the world. It represents a key symbol of Lisbon’s literary and cultural history.",
+      pt:"Fundada em 1732, a Livraria Bertrand é considerada a livraria mais antiga do mundo ainda em funcionamento. Representa um símbolo da história literária e cultural de Lisboa.",
       en:"Founded in 1732, Livraria Bertrand is considered the oldest operating bookstore in the world. It represents a key symbol of Lisbon’s literary and cultural history."
     },
     audio:{pt:"audio/pt/optB.mp3", en:"audio/en/optB.mp3"} },
@@ -204,21 +204,15 @@ function setRouteVisible(visible) {
   }
 }
 
-/* ✅ header aparece só no 1º scroll */
+// ====== HEADER: mostrar no 1º scroll + altura real ======
 let headerShown = false;
-function showHeaderNow(){
-  if (headerShown) return;
-  headerShown = true;
-  document.body.classList.remove("header-hidden");
-  globalBar?.setAttribute("aria-hidden", "false");
 
-  // ✅ aplicar altura real do header ao body (evita “texto por baixo”)
-  syncHeaderHeight();
-  // recalcula animação para não dar “saltos”
-  updateIntroAnimation();
+function getHeaderH(){
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--headerH").trim();
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
 }
 
-// ====== HEADER HEIGHT REAL ======
 function syncHeaderHeight(){
   if (!globalBar) return;
 
@@ -227,17 +221,35 @@ function syncHeaderHeight(){
     return;
   }
 
-  // inclui safe-area top (iOS)
-  const cs = getComputedStyle(globalBar);
-  const padTop = parseFloat(cs.paddingTop) || 0;
-  const padBottom = parseFloat(cs.paddingBottom) || 0;
-
-  // altura total já inclui padding, mas em iOS às vezes fica “curta” no primeiro frame
-  const h = Math.ceil(globalBar.getBoundingClientRect().height + (padTop + padBottom) * 0);
+  const h = Math.ceil(globalBar.getBoundingClientRect().height);
   document.documentElement.style.setProperty("--headerH", `${h}px`);
 }
 
-window.addEventListener("resize", syncHeaderHeight);
+function showHeaderNow(){
+  if (headerShown) return;
+  headerShown = true;
+
+  document.body.classList.remove("header-hidden");
+  globalBar?.setAttribute("aria-hidden", "false");
+
+  // importante: atualizar padding-top + sticky offsets
+  syncHeaderHeight();
+  updateIntroAnimation();
+}
+
+// ✅ iOS: se o header mudar de altura, recalcula sempre
+if (globalBar && "ResizeObserver" in window) {
+  const ro = new ResizeObserver(() => {
+    syncHeaderHeight();
+    updateIntroAnimation();
+  });
+  ro.observe(globalBar);
+}
+
+window.addEventListener("resize", () => {
+  syncHeaderHeight();
+  updateIntroAnimation();
+});
 window.addEventListener("orientationchange", () => {
   syncHeaderHeight();
   updateIntroAnimation();
@@ -302,7 +314,6 @@ function loadCurrentPoint(){
 
   prevBtn.disabled = currentRequired <= 1;
   playBtn.textContent = "▶";
-
   nextBtn.disabled = !listenedComplete.has(listenedKeyForRequired(currentRequired));
 }
 
@@ -382,8 +393,6 @@ function dismissOverlay() {
 }
 
 // ====== RECOMEÇAR ======
-let mapLockedFinal = false;
-
 function resetProgress() {
   localStorage.removeItem("currentRequired");
   localStorage.removeItem("listenedComplete");
@@ -407,8 +416,6 @@ function resetProgress() {
 
   initOverlay();
   setRouteVisible(false);
-
-  mapLockedFinal = false;
 }
 
 resetBtn.addEventListener("click", () => {
@@ -416,7 +423,7 @@ resetBtn.addEventListener("click", () => {
   if (ok) resetProgress();
 });
 
-// ====== MAPA: estado final sem reset ======
+// ====== MAPA: estado final (sem lock; só quando saíste da intro) ======
 function forceMapComplete(){
   for (const layer of introLayers) {
     if (!layer) continue;
@@ -425,7 +432,7 @@ function forceMapComplete(){
   }
 }
 
-// ====== INTRO: animação com scroll ======
+// ====== INTRO: animação com scroll (com reverse) ======
 function layerUpdate(layer, t, depthPx) {
   if (!layer) return;
   layer.style.opacity = String(t);
@@ -436,17 +443,24 @@ function layerUpdate(layer, t, depthPx) {
 function updateIntroAnimation() {
   if (!intro) return;
 
-  // se já bloqueou final, mantém
-  if (mapLockedFinal) {
+  const headerH = getHeaderH();
+  const rect = intro.getBoundingClientRect();
+
+  // ✅ se já passaste a intro (o fundo da intro já ficou por cima do header),
+  // mantém mapa completo e mostra a rota
+  const pastIntro = rect.bottom <= (headerH + 1);
+
+  if (pastIntro) {
     forceMapComplete();
     setRouteVisible(true);
     return;
   }
 
-  const rect = intro.getBoundingClientRect();
+  // aqui estás dentro da intro -> animação normal (inclui reverse ao subir)
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
 
+  // copy
   const c2 = clamp01((scrolled - 0.05) / 0.14);
   const c3 = clamp01((scrolled - 0.10) / 0.16);
 
@@ -456,6 +470,7 @@ function updateIntroAnimation() {
   introSub.style.opacity = String(c3);
   introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
 
+  // layers
   const t1 = clamp01((scrolled - 0.08) / 0.14);
   const t2 = clamp01((scrolled - 0.20) / 0.14);
   const t3 = clamp01((scrolled - 0.32) / 0.14);
@@ -470,19 +485,15 @@ function updateIntroAnimation() {
   layerUpdate(introLayers[4], t5, 10);
   layerUpdate(introLayers[5], t6, 12);
 
+  // hint
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
   }
 
+  // mostra rota só no fim da intro (mas sem “lock”)
   const showRoute = scrolled >= 0.93;
-  if (showRoute) {
-    mapLockedFinal = true;
-    forceMapComplete();
-    setRouteVisible(true);
-  } else {
-    setRouteVisible(false);
-  }
+  setRouteVisible(showRoute);
 }
 
 // throttle ~30fps
