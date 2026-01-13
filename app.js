@@ -164,27 +164,33 @@ const ui = {
   pt: {
     pageTitle: "Percurso",
     kicker: "Postais por Lisboa",
-    overlayTitle: "Bem-vindo!",
+
+    // ✅ pedido: Bem vindo! (sem estrela)
+    overlayTitle: "Bem vindo!",
     overlayText: "Faz scroll para começares a descobrir o mapa",
-    introTitle: "Segue a cidade\nponto a ponto",
+
+    introTitle: "Segue a cidade\nparagem a paragem",
     introSub: "Ouve a história antes de entrar. Avança no percurso ao teu ritmo.",
     footer: "Postais por Lisboa",
 
-    // ✅ sugestão de naming: Paragens
     nowPlaying: "Paragem atual",
     progress: (n) => `Paragem ${Math.min(n, REQUIRED_TOTAL)} de ${REQUIRED_TOTAL}`,
     reset: "Recomeçar",
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)",
 
+    // ✅ melhor solução: alternativo com Nº + nome
     choiceMain: (n, title) => `Paragem ${n} — ${title}`,
-    choiceAlt: (altTitle) => `Alternativo — ${altTitle}`,
+    choiceAlt: (altLabel, altTitle) => `Alternativo ${altLabel} — ${altTitle}`,
   },
   en: {
     pageTitle: "Route",
     kicker: "Postcards from Lisbon",
+
+    // ✅ pedido: Welcome!
     overlayTitle: "Welcome!",
     overlayText: "Scroll to start discovering the map",
-    introTitle: "Follow the city\npoint by point",
+
+    introTitle: "Follow the city\nstop by stop",
     introSub: "Listen before you enter. Move through the route at your own pace.",
     footer: "Postcards from Lisbon",
 
@@ -193,8 +199,9 @@ const ui = {
     reset: "Restart",
     resetConfirm: "Restart the route? (This will erase your progress.)",
 
+    // ✅ alternative com Nº + nome
     choiceMain: (n, title) => `Stop ${n} — ${title}`,
-    choiceAlt: (altTitle) => `Alternative — ${altTitle}`,
+    choiceAlt: (altLabel, altTitle) => `Alternative ${altLabel} — ${altTitle}`,
   }
 };
 
@@ -328,9 +335,9 @@ function updateChoiceUI(){
 
   playerChoice.hidden = false;
 
-  // ✅ Botões com NOME do alternativo (melhor solução)
+  // ✅ Botões com Nº + nome (principal e alternativo)
   choiceMain.textContent = ui[lang].choiceMain(currentRequired, base?.title?.[lang] || "");
-  choiceAlt.textContent = ui[lang].choiceAlt(altP?.title?.[lang] || "");
+  choiceAlt.textContent = ui[lang].choiceAlt(altP?.label || "", altP?.title?.[lang] || "");
 
   choiceMain.setAttribute("aria-pressed", currentVariant === "main" ? "true" : "false");
   choiceAlt.setAttribute("aria-pressed", currentVariant === "alt" ? "true" : "false");
