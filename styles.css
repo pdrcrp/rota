@@ -33,10 +33,10 @@
 
   --shadow: 0 18px 50px rgba(0,0,0,.12);
 
-  /* começa a 0 (header escondido) e depois JS mete o valor real */
+  /* começa a 0 (header escondido) e JS mete valor real */
   --headerH: 0px;
 
-  /* ✅ header agora creme */
+  /* header creme */
   --headerBg: #f2e7cf;
   --headerText: #0f4f79;
 }
@@ -164,7 +164,6 @@ body.header-hidden .globalbar{
   font-weight: 800;
 }
 
-/* botões no header (sobre creme) */
 .globalbar .lang-btn,
 .globalbar .reset-btn{
   border-color: rgba(15,79,121,.20);
@@ -261,10 +260,6 @@ body.header-hidden .globalbar{
   pointer-events: auto;
 }
 
-.overlay-lang-btn{
-  padding: 8px 10px;
-}
-
 .scroll-overlay__text{
   margin: 8px 0 0;
   color: rgba(11,13,18,.78);
@@ -294,13 +289,12 @@ body.header-hidden .globalbar{
   position: relative;
 }
 
-/* ✅ como o header aparece depois, sticky continua ok */
+/* ✅ agora respeita sempre a altura do header (quando aparece) */
 .intro-sticky{
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: var(--headerH);
+  height: calc(100vh - var(--headerH));
 
-  /* ✅ menos padding e menos gap geral */
   padding: 10px 14px 10px;
   display:flex;
   flex-direction:column;
@@ -311,13 +305,13 @@ body.header-hidden .globalbar{
 .intro-top{ text-align: center; }
 
 .intro-copy{
-  margin: 2px auto 0;  /* ✅ ainda menos */
+  margin: 2px auto 0;
   max-width: 34ch;
   text-align: center;
 }
 
 .intro-title{
-  margin: 2px 0 4px;   /* ✅ menos */
+  margin: 2px 0 4px;
   font-family: var(--fontEditorial);
   font-weight: 400;
   font-size: 34px;
@@ -337,7 +331,6 @@ body.header-hidden .globalbar{
   will-change: transform, opacity;
 }
 
-/* ✅ menos espaço antes do mapa */
 .intro-visual{
   position: relative;
   height: 76vh;
@@ -345,7 +338,7 @@ body.header-hidden .globalbar{
   display:flex;
   align-items:center;
   justify-content:center;
-  margin-top: 0;     /* ✅ remove margem extra */
+  margin-top: 0;
 }
 
 .intro-map{
@@ -380,7 +373,7 @@ body.header-hidden .globalbar{
   text-align:center;
   color: rgba(11,13,18,.60);
   font-size: 12px;
-  padding: 2px 0 4px; /* ✅ menos */
+  padding: 2px 0 4px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -397,11 +390,10 @@ body.header-hidden .globalbar{
 ========================= */
 .route{ min-height: 100vh; }
 
-/* ✅ reduz MUITO a distância mapa -> card */
 .route-wrap{
   max-width: 820px;
   margin: 0 auto;
-  padding: 6px 14px 20px; /* ✅ era 12px em cima */
+  padding: 6px 14px 20px;
   transition: opacity .35s ease;
 }
 
@@ -418,9 +410,7 @@ body.header-hidden .globalbar{
 /* =========================
    PLAYER
 ========================= */
-.player{
-  margin-top: 6px; /* ✅ menos espaço antes do card */
-}
+.player{ margin-top: 6px; }
 
 .player-card{
   border: 1px solid rgba(11,13,18,.12);
