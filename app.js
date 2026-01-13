@@ -102,11 +102,14 @@ const points = [
 // ====== ESTADO ======
 let lang = "pt";
 let currentRequired = 1;
+
+// ✅ progresso desbloqueado por ponto obrigatório (6/7 conta igual mesmo que seja alternativo)
 let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
 
-// ✅ guarda escolha (main/alt) só para 6 e 7
-let variantMode = JSON.parse(localStorage.getItem("variantMode") || "{}"); // { "6":"alt", "7":"main" }
+// ✅ escolha NÃO PERSISTE (reseta ao sair do ponto)
+let currentVariant = "main"; // "main" | "alt"
 
+// persistência do ponto atual
 const saved = localStorage.getItem("currentRequired");
 if (saved) {
   const n = Number(saved);
@@ -149,7 +152,7 @@ const introSub = document.getElementById("introSub");
 const routeWrap = document.getElementById("route");
 const routeFooter = document.getElementById("routeFooter");
 
-// ✅ escolha
+// escolha
 const playerChoice = document.getElementById("playerChoice");
 const choiceMain = document.getElementById("choiceMain");
 const choiceAlt = document.getElementById("choiceAlt");
@@ -213,20 +216,18 @@ function setRouteVisible(visible) {
   }
 }
 
-// ====== VARIANT (main/alt) ======
-function getVariant(order){
-  return (variantMode && variantMode[String(order)]) ? variantMode[String(order)] : "main";
+// ====== VARIANT (main/alt) — NÃO PERSISTE ======
+function resetVariantForPoint(order){
+  // sempre que entras num ponto novo, começa no "main"
+  currentVariant = "main";
 }
-function setVariant(order, v){
-  variantMode[String(order)] = v;
-  localStorage.setItem("variantMode", JSON.stringify(variantMode));
-}
+
 function getPointForCurrent(){
   const base = getRequiredByOrder(currentRequired);
   if (!base) return null;
 
   const alt = altChoice[currentRequired];
-  if (alt && getVariant(currentRequired) === "alt") {
+  if (alt && currentVariant === "alt") {
     const altPoint = getById(alt.id);
     return altPoint || base;
   }
@@ -261,7 +262,7 @@ function showHeaderNow(){
 
   syncHeaderHeight();
   updateIntroAnimation();
-  computeFooterClamp(); // ✅ recalcula limites quando header aparece
+  computeFooterClamp();
 }
 
 if (globalBar && "ResizeObserver" in window) {
@@ -342,23 +343,22 @@ function updateChoiceUI(){
   choiceMain.textContent = ui[lang].mainBtn(currentRequired);
   choiceAlt.textContent = (lang === "pt") ? alt.ptLabel : alt.enLabel;
 
-  const v = getVariant(currentRequired);
-  choiceMain.setAttribute("aria-pressed", v === "main" ? "true" : "false");
-  choiceAlt.setAttribute("aria-pressed", v === "alt" ? "true" : "false");
+  choiceMain.setAttribute("aria-pressed", currentVariant === "main" ? "true" : "false");
+  choiceAlt.setAttribute("aria-pressed", currentVariant === "alt" ? "true" : "false");
 }
 
 choiceMain?.addEventListener("click", () => {
   if (!altChoice[currentRequired]) return;
-  if (getVariant(currentRequired) === "main") return;
-  setVariant(currentRequired, "main");
+  if (currentVariant === "main") return;
+  currentVariant = "main";
   updateChoiceUI();
   loadCurrentPoint();
 });
 
 choiceAlt?.addEventListener("click", () => {
   if (!altChoice[currentRequired]) return;
-  if (getVariant(currentRequired) === "alt") return;
-  setVariant(currentRequired, "alt");
+  if (currentVariant === "alt") return;
+  currentVariant = "alt";
   updateChoiceUI();
   loadCurrentPoint();
 });
@@ -372,13 +372,13 @@ function loadCurrentPoint(){
   playerTitle.textContent = p.title[lang];
   playerText.textContent = p.text[lang];
 
-  // escolha aparece/atualiza
   updateChoiceUI();
 
   playerAudio.pause();
   playerAudio.currentTime = 0;
   resetAudioBar();
 
+  // ✅ aqui é onde o alternativo liga o áudio certo (optA/optB têm audio próprio)
   playerAudio.src = p.audio[lang];
   playerAudio.load();
 
@@ -396,13 +396,21 @@ function togglePlay(){
 playerAudio.addEventListener("play", () => { playBtn.textContent = "❚❚"; });
 playerAudio.addEventListener("pause", () => { playBtn.textContent = "▶"; });
 
-prevBtn.addEventListener("click", () => {
-  if (currentRequired <= 1) return;
-  currentRequired -= 1;
+function goToRequired(n){
+  currentRequired = n;
   localStorage.setItem("currentRequired", String(currentRequired));
+
+  // ✅ MUITO IMPORTANTE: ao mudar de ponto, reseta sempre para "main"
+  resetVariantForPoint(currentRequired);
+
   updateProgressUI();
   loadCurrentPoint();
   computeFooterClamp();
+}
+
+prevBtn.addEventListener("click", () => {
+  if (currentRequired <= 1) return;
+  goToRequired(currentRequired - 1);
 });
 
 playBtn.addEventListener("click", togglePlay);
@@ -410,11 +418,7 @@ playBtn.addEventListener("click", togglePlay);
 nextBtn.addEventListener("click", () => {
   if (nextBtn.disabled) return;
   if (currentRequired < REQUIRED_TOTAL) {
-    currentRequired += 1;
-    localStorage.setItem("currentRequired", String(currentRequired));
-    updateProgressUI();
-    loadCurrentPoint();
-    computeFooterClamp();
+    goToRequired(currentRequired + 1);
   }
 });
 
@@ -469,11 +473,10 @@ function dismissOverlay() {
 function resetProgress() {
   localStorage.removeItem("currentRequired");
   localStorage.removeItem("listenedComplete");
-  localStorage.removeItem("variantMode");
 
   currentRequired = 1;
   listenedComplete = new Set();
-  variantMode = {};
+  currentVariant = "main";
 
   playerAudio.pause();
   playerAudio.currentTime = 0;
@@ -492,7 +495,6 @@ function resetProgress() {
   initOverlay();
   setRouteVisible(false);
 
-  // reset clamp
   maxScrollY = null;
   clampActive = false;
 }
@@ -524,7 +526,6 @@ function updateIntroAnimation() {
 
   const headerH = getHeaderH();
   const rect = intro.getBoundingClientRect();
-
   const pastIntro = rect.bottom <= (headerH + 1);
 
   if (pastIntro) {
@@ -573,7 +574,6 @@ let maxScrollY = null;
 let clampActive = false;
 let isClamping = false;
 
-// calcula o Y máximo: topo do footer alinhado ao topo visível (logo após header)
 function computeFooterClamp(){
   if (!routeFooter || !routeWrap) {
     maxScrollY = null;
@@ -587,10 +587,7 @@ function computeFooterClamp(){
     return;
   }
 
-  // posição absoluta do topo do footer
   const footerTopAbs = routeFooter.getBoundingClientRect().top + window.scrollY;
-
-  // queremos “travar no footer” -> parar quando o topo do footer chega ao topo do viewport (depois do header)
   const headerH = getHeaderH();
   maxScrollY = Math.max(0, Math.floor(footerTopAbs - headerH));
 }
@@ -598,11 +595,7 @@ function computeFooterClamp(){
 function clampToFooter(){
   if (maxScrollY == null) return;
 
-  if (window.scrollY >= (maxScrollY - 1)) {
-    clampActive = true;
-  } else {
-    clampActive = false;
-  }
+  clampActive = window.scrollY >= (maxScrollY - 1);
 
   if (window.scrollY > maxScrollY + 1) {
     if (isClamping) return;
@@ -612,7 +605,7 @@ function clampToFooter(){
   }
 }
 
-// ✅ iOS: bloquear “scroll para baixo” quando já estás no limite
+// iOS: bloquear overscroll quando já estás no limite
 let touchStartY = 0;
 document.addEventListener("touchstart", (e) => {
   if (!e.touches || !e.touches[0]) return;
@@ -626,7 +619,6 @@ document.addEventListener("touchmove", (e) => {
   const currentY = e.touches[0].clientY;
   const fingerGoingUp = currentY < touchStartY; // finger up => page down
 
-  // se estás no limite e tentas ir MAIS para baixo, bloqueia
   if (fingerGoingUp && window.scrollY >= maxScrollY - 1) {
     e.preventDefault();
   }
@@ -663,6 +655,9 @@ syncHeaderHeight();
 
 applyStaticTexts();
 updateProgressUI();
+
+// ao iniciar, também começa no main (se calhar estás no 6/7 por persistência do currentRequired)
+resetVariantForPoint(currentRequired);
 loadCurrentPoint();
 
 setRouteVisible(false);
