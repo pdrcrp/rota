@@ -1,3 +1,4 @@
+/* styles.css */
 /* =========================
    FONTES
 ========================= */
@@ -365,22 +366,7 @@ body.header-hidden .globalbar{
   transform: translate3d(0, 10px, 0);
 }
 
-.scroll-hint{
-  margin-top: auto;
-  text-align:center;
-  color: rgba(242,231,207,.80);
-  font-size: 12px;
-  padding: 2px 0 4px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-}
-.scroll-hint::after{
-  content:"↓";
-  display:inline-block;
-  animation: bounce 1.05s infinite;
-}
+/* ✅ REMOVIDO: estilos do scroll-hint (já não existe no HTML) */
 
 /* =========================
    ROUTE
@@ -439,7 +425,7 @@ body.header-hidden .globalbar{
   text-overflow: ellipsis;
 }
 
-/* ✅ Alternativo: sempre em linha própria */
+/* ✅ Alternativo: em linha própria (só aparece quando existe alternativa) */
 .player-choice{
   margin-top: 10px;
   display: block;
@@ -473,12 +459,6 @@ body.header-hidden .globalbar{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* ✅ estado disabled visível */
-.choice-btn:disabled{
-  opacity: .55;
-  cursor: not-allowed;
 }
 
 .player-routebar{
@@ -583,7 +563,6 @@ body.header-hidden .globalbar{
 }
 
 @media (prefers-reduced-motion: reduce){
-  .scroll-hint::after{ animation: none; }
   .scroll-overlay__arrow{ animation: none; }
   .player-audiobar > span{ transition: none; }
 }
