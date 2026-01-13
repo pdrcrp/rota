@@ -95,7 +95,6 @@ const points = [
 // ====== ESTADO ======
 let lang = "pt";
 let currentRequired = 1;
-
 let listenedComplete = new Set(JSON.parse(localStorage.getItem("listenedComplete") || "[]"));
 
 const saved = localStorage.getItem("currentRequired");
@@ -138,6 +137,7 @@ const introTitle = document.getElementById("introTitle");
 const introSub = document.getElementById("introSub");
 
 const routeWrap = document.getElementById("route");
+const routeFooter = document.getElementById("routeFooter");
 
 const introLayers = [
   document.querySelector(".intro-map .l1"),
@@ -157,7 +157,7 @@ const ui = {
     overlayText: "Faz scroll para começares a descobrir o mapa",
     introTitle: "Segue a cidade\nponto a ponto",
     introSub: "Ouve a história antes de entrar. Avança no percurso ao teu ritmo.",
-    footer: "Postais por Lisboa — percurso interativo",
+    footer: "Postais por Lisboa",
     nowPlaying: "Ponto atual",
     progress: (n) => `Ponto ${Math.min(n, REQUIRED_TOTAL)} de ${REQUIRED_TOTAL}`,
     reset: "Recomeçar",
@@ -170,7 +170,7 @@ const ui = {
     overlayText: "Scroll to start discovering the map",
     introTitle: "Follow the city\npoint by point",
     introSub: "Listen before you enter. Move through the route at your own pace.",
-    footer: "Postcards from Lisbon — interactive route",
+    footer: "Postcards from Lisbon",
     nowPlaying: "Current stop",
     progress: (n) => `Stop ${Math.min(n, REQUIRED_TOTAL)} of ${REQUIRED_TOTAL}`,
     reset: "Restart",
@@ -180,18 +180,9 @@ const ui = {
 
 // ====== HELPERS ======
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
-
-function getRequiredByOrder(order){
-  return points.find(p => p.kind === "required" && p.order === order);
-}
-
-function listenedKeyForRequired(order){
-  return `req-${order}`;
-}
-
-function saveListened(){
-  localStorage.setItem("listenedComplete", JSON.stringify([...listenedComplete]));
-}
+function getRequiredByOrder(order){ return points.find(p => p.kind === "required" && p.order === order); }
+function listenedKeyForRequired(order){ return `req-${order}`; }
+function saveListened(){ localStorage.setItem("listenedComplete", JSON.stringify([...listenedComplete])); }
 
 function setRouteVisible(visible) {
   if (!routeWrap) return;
@@ -232,12 +223,10 @@ function showHeaderNow(){
   document.body.classList.remove("header-hidden");
   globalBar?.setAttribute("aria-hidden", "false");
 
-  // importante: atualizar padding-top + sticky offsets
   syncHeaderHeight();
   updateIntroAnimation();
 }
 
-// ✅ iOS: se o header mudar de altura, recalcula sempre
 if (globalBar && "ResizeObserver" in window) {
   const ro = new ResizeObserver(() => {
     syncHeaderHeight();
@@ -416,6 +405,11 @@ function resetProgress() {
 
   initOverlay();
   setRouteVisible(false);
+
+  // reset do bloqueio
+  scrollLockActive = false;
+  scrollLockY = null;
+  lastScrollY = window.scrollY;
 }
 
 resetBtn.addEventListener("click", () => {
@@ -423,7 +417,7 @@ resetBtn.addEventListener("click", () => {
   if (ok) resetProgress();
 });
 
-// ====== MAPA: estado final (sem lock; só quando saíste da intro) ======
+// ====== MAPA: estado final ======
 function forceMapComplete(){
   for (const layer of introLayers) {
     if (!layer) continue;
@@ -432,7 +426,7 @@ function forceMapComplete(){
   }
 }
 
-// ====== INTRO: animação com scroll (com reverse) ======
+// ====== INTRO: animação com scroll (reverse OK) ======
 function layerUpdate(layer, t, depthPx) {
   if (!layer) return;
   layer.style.opacity = String(t);
@@ -446,8 +440,7 @@ function updateIntroAnimation() {
   const headerH = getHeaderH();
   const rect = intro.getBoundingClientRect();
 
-  // ✅ se já passaste a intro (o fundo da intro já ficou por cima do header),
-  // mantém mapa completo e mostra a rota
+  // se já passaste a intro: manter mapa completo e mostrar rota
   const pastIntro = rect.bottom <= (headerH + 1);
 
   if (pastIntro) {
@@ -456,11 +449,10 @@ function updateIntroAnimation() {
     return;
   }
 
-  // aqui estás dentro da intro -> animação normal (inclui reverse ao subir)
+  // dentro da intro -> animação normal (inclui reverse)
   const total = intro.offsetHeight - window.innerHeight;
   const scrolled = clamp01((-rect.top) / (total || 1));
 
-  // copy
   const c2 = clamp01((scrolled - 0.05) / 0.14);
   const c3 = clamp01((scrolled - 0.10) / 0.16);
 
@@ -470,7 +462,6 @@ function updateIntroAnimation() {
   introSub.style.opacity = String(c3);
   introSub.style.transform = `translate3d(0, ${(10 - (c3 * 10)).toFixed(2)}px, 0)`;
 
-  // layers
   const t1 = clamp01((scrolled - 0.08) / 0.14);
   const t2 = clamp01((scrolled - 0.20) / 0.14);
   const t3 = clamp01((scrolled - 0.32) / 0.14);
@@ -485,18 +476,71 @@ function updateIntroAnimation() {
   layerUpdate(introLayers[4], t5, 10);
   layerUpdate(introLayers[5], t6, 12);
 
-  // hint
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
   }
 
-  // mostra rota só no fim da intro (mas sem “lock”)
   const showRoute = scrolled >= 0.93;
   setRouteVisible(showRoute);
 }
 
-// throttle ~30fps
+// ====== BLOQUEIO NO FIM (quando chega ao footer) ======
+let scrollLockActive = false;
+let scrollLockY = null;
+let lastScrollY = 0;
+let isAdjustingScroll = false;
+
+function getFooterLockTriggerY(){
+  if (!routeFooter) return null;
+  const r = routeFooter.getBoundingClientRect();
+  return r.top + window.scrollY; // posição absoluta do topo do footer
+}
+
+function updateScrollLock(){
+  if (!routeFooter) return;
+
+  // só faz sentido quando a rota já está visível
+  const routeShown = routeWrap && routeWrap.classList.contains("is-shown");
+  if (!routeShown) {
+    scrollLockActive = false;
+    scrollLockY = null;
+    return;
+  }
+
+  const triggerY = getFooterLockTriggerY();
+  if (triggerY == null) return;
+
+  // quando a zona do footer entra no ecrã, ativa lock naquele ponto
+  const footerRect = routeFooter.getBoundingClientRect();
+  const footerInView = footerRect.top <= (window.innerHeight * 0.78);
+
+  if (!scrollLockActive && footerInView) {
+    scrollLockActive = true;
+    // trava exatamente onde estás (fica com o footer visível)
+    scrollLockY = window.scrollY;
+  }
+
+  // se estiver locked e o utilizador fizer scroll para cima, destrava
+  if (scrollLockActive && scrollLockY != null) {
+    const goingUp = window.scrollY < lastScrollY - 2;
+    if (goingUp) {
+      scrollLockActive = false;
+      scrollLockY = null;
+    }
+  }
+
+  // se locked e tenta ir para baixo, volta ao lockY
+  if (scrollLockActive && scrollLockY != null && window.scrollY > scrollLockY + 1) {
+    if (!isAdjustingScroll) {
+      isAdjustingScroll = true;
+      window.scrollTo({ top: scrollLockY, behavior: "auto" });
+      requestAnimationFrame(() => { isAdjustingScroll = false; });
+    }
+  }
+}
+
+// ====== SCROLL LOOP ======
 let ticking = false;
 let lastFrameTime = 0;
 const FRAME_MS = 33;
@@ -507,11 +551,14 @@ function onScroll(){
     dismissOverlay();
   }
 
+  lastScrollY = window.scrollY;
+
   if (!ticking) {
     ticking = true;
     requestAnimationFrame((now) => {
       if (now - lastFrameTime >= FRAME_MS) {
         updateIntroAnimation();
+        updateScrollLock();
         lastFrameTime = now;
       }
       ticking = false;
@@ -530,10 +577,12 @@ loadCurrentPoint();
 setRouteVisible(false);
 initOverlay();
 updateIntroAnimation();
+updateScrollLock();
 
 requestAnimationFrame(() => {
   syncHeaderHeight();
   updateIntroAnimation();
+  updateScrollLock();
 
   if (window.scrollY > 2) {
     showHeaderNow();
