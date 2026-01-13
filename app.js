@@ -1,7 +1,7 @@
 // ====== CONFIGURAÇÃO ======
 const REQUIRED_TOTAL = 9;
 
-// ✅ alternativos: 6 -> 10, 7 -> 11 (mantém ids optA/optB)
+// ✅ alternativos: 6 -> 10, 7 -> 11
 const altChoice = {
   6: { id: "optA" },
   7: { id: "optB" },
@@ -147,8 +147,7 @@ const routeWrap = document.getElementById("route");
 const routeFooter = document.getElementById("routeFooter");
 
 const playerChoice = document.getElementById("playerChoice");
-const choiceMain = document.getElementById("choiceMain");
-const choiceAlt = document.getElementById("choiceAlt");
+const choiceAltToggle = document.getElementById("choiceAltToggle");
 
 const introLayers = [
   document.querySelector(".intro-map .l1"),
@@ -164,11 +163,8 @@ const ui = {
   pt: {
     pageTitle: "Percurso",
     kicker: "Postais por Lisboa",
-
-    // ✅ pedido: Bem vindo! (sem estrela)
     overlayTitle: "Bem vindo!",
     overlayText: "Faz scroll para começares a descobrir o mapa",
-
     introTitle: "Segue a cidade\nparagem a paragem",
     introSub: "Ouve a história antes de entrar. Avança no percurso ao teu ritmo.",
     footer: "Postais por Lisboa",
@@ -178,18 +174,14 @@ const ui = {
     reset: "Recomeçar",
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)",
 
-    // ✅ melhor solução: alternativo com Nº + nome
-    choiceMain: (n, title) => `Paragem ${n} — ${title}`,
-    choiceAlt: (altLabel, altTitle) => `Alternativo ${altLabel} — ${altTitle}`,
+    // ✅ 1 botão: só o nome da alternativa (linha única)
+    altToggleLabel: (altLabel, altTitle) => `Alternativo ${altLabel} — ${altTitle}`,
   },
   en: {
     pageTitle: "Route",
     kicker: "Postcards from Lisbon",
-
-    // ✅ pedido: Welcome!
     overlayTitle: "Welcome!",
     overlayText: "Scroll to start discovering the map",
-
     introTitle: "Follow the city\nstop by stop",
     introSub: "Listen before you enter. Move through the route at your own pace.",
     footer: "Postcards from Lisbon",
@@ -199,9 +191,7 @@ const ui = {
     reset: "Restart",
     resetConfirm: "Restart the route? (This will erase your progress.)",
 
-    // ✅ alternative com Nº + nome
-    choiceMain: (n, title) => `Stop ${n} — ${title}`,
-    choiceAlt: (altLabel, altTitle) => `Alternative ${altLabel} — ${altTitle}`,
+    altToggleLabel: (altLabel, altTitle) => `Alternative ${altLabel} — ${altTitle}`,
   }
 };
 
@@ -320,41 +310,26 @@ playerAudio.addEventListener("ended", () => {
   nextBtn.disabled = false;
 });
 
-// ====== CHOICE UI ======
+// ====== ALTERNATIVO: 1 BOTÃO TOGGLE ======
 function updateChoiceUI(){
   const alt = altChoice[currentRequired];
-  if (!playerChoice || !choiceMain || !choiceAlt) return;
+  if (!playerChoice || !choiceAltToggle) return;
 
   if (!alt) {
     playerChoice.hidden = true;
     return;
   }
 
-  const base = getRequiredByOrder(currentRequired);
   const altP = getById(alt.id);
-
   playerChoice.hidden = false;
 
-  // ✅ Botões com Nº + nome (principal e alternativo)
-  choiceMain.textContent = ui[lang].choiceMain(currentRequired, base?.title?.[lang] || "");
-  choiceAlt.textContent = ui[lang].choiceAlt(altP?.label || "", altP?.title?.[lang] || "");
-
-  choiceMain.setAttribute("aria-pressed", currentVariant === "main" ? "true" : "false");
-  choiceAlt.setAttribute("aria-pressed", currentVariant === "alt" ? "true" : "false");
+  choiceAltToggle.textContent = ui[lang].altToggleLabel(altP?.label || "", altP?.title?.[lang] || "");
+  choiceAltToggle.setAttribute("aria-pressed", currentVariant === "alt" ? "true" : "false");
 }
 
-choiceMain?.addEventListener("click", () => {
+choiceAltToggle?.addEventListener("click", () => {
   if (!altChoice[currentRequired]) return;
-  if (currentVariant === "main") return;
-  currentVariant = "main";
-  updateChoiceUI();
-  loadCurrentPoint();
-});
-
-choiceAlt?.addEventListener("click", () => {
-  if (!altChoice[currentRequired]) return;
-  if (currentVariant === "alt") return;
-  currentVariant = "alt";
+  currentVariant = (currentVariant === "alt") ? "main" : "alt";
   updateChoiceUI();
   loadCurrentPoint();
 });
