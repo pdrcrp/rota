@@ -140,7 +140,7 @@ const overlayText = document.getElementById("overlayText");
 const footerCopy = document.getElementById("footerCopy");
 
 const intro = document.getElementById("intro");
-const scrollHint = document.getElementById("scrollHint"); // (não existe no HTML, pode ser null)
+const scrollHint = document.getElementById("scrollHint"); // null (ok)
 const scrollOverlay = document.getElementById("scrollOverlay");
 const introTitle = document.getElementById("introTitle");
 const introSub = document.getElementById("introSub");
@@ -225,7 +225,7 @@ function getPointForCurrent(){
   return base;
 }
 
-// ====== HEADER show on first scroll + height ======
+// ====== HEADER show on first interaction + height ======
 let headerShown = false;
 
 function getHeaderH(){
@@ -256,6 +256,23 @@ function showHeaderNow(){
   computeFooterClamp();
   clampToFooter();
 }
+
+// ✅ FIX MOBILE: fecha overlay no primeiro gesto (mesmo antes de haver scrollY>2)
+let overlayDismissedByGesture = false;
+function handleFirstGesture(){
+  if (overlayDismissedByGesture) return;
+  overlayDismissedByGesture = true;
+
+  showHeaderNow();
+  dismissOverlay();
+
+  // ajuda em iOS que às vezes não mexe o scroll no 1º gesto
+  if (window.scrollY < 2) window.scrollTo({ top: 2, behavior: "auto" });
+}
+
+window.addEventListener("wheel", handleFirstGesture, { passive: true });
+document.addEventListener("touchstart", handleFirstGesture, { passive: true });
+document.addEventListener("touchmove", handleFirstGesture, { passive: true });
 
 if (globalBar && "ResizeObserver" in window) {
   const ro = new ResizeObserver(() => {
@@ -316,7 +333,6 @@ function updateChoiceUI(){
   const alt = altChoice[currentRequired];
   if (!playerChoice || !choiceAltToggle) return;
 
-  // ✅ Se não houver alternativa -> remove o bloco inteiro
   if (!alt) {
     playerChoice.hidden = true;
     currentVariant = "main";
@@ -324,7 +340,6 @@ function updateChoiceUI(){
     return;
   }
 
-  // ✅ Há alternativa -> mostra o bloco e atualiza texto/estado
   const altP = getById(alt.id);
   playerChoice.hidden = false;
 
@@ -466,6 +481,7 @@ function resetProgress() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   headerShown = false;
+  overlayDismissedByGesture = false;
   document.body.classList.add("header-hidden");
   globalBar?.setAttribute("aria-hidden", "true");
   syncHeaderHeight();
@@ -538,7 +554,6 @@ function updateIntroAnimation() {
   layerUpdate(introLayers[4], t5, 10);
   layerUpdate(introLayers[5], t6, 12);
 
-  // (scrollHint é null, e o "Faz scroll" já foi removido do HTML)
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
