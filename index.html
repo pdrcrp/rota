@@ -12,7 +12,7 @@
 </head>
 
 <body class="header-hidden">
-  <!-- TOP BAR: aparece só depois do 1º scroll -->
+  <!-- HEADER: aparece só depois do 1º scroll -->
   <header class="globalbar" id="globalBar" aria-hidden="true">
     <div class="globalbar__left">
       <img class="globalbar__logo" src="assets/logo.png" alt="Postais por Lisboa" />
@@ -23,9 +23,7 @@
     </div>
 
     <div class="globalbar__right">
-      <button class="reset-btn" id="resetBtn" type="button" title="Recomeçar percurso">
-        Recomeçar
-      </button>
+      <button class="reset-btn" id="resetBtn" type="button" title="Recomeçar percurso">Recomeçar</button>
 
       <div class="lang" aria-label="Idioma">
         <button class="lang-btn header-lang-btn" data-lang="pt" aria-pressed="true">PT</button>
@@ -39,7 +37,7 @@
     </div>
   </header>
 
-  <!-- POPUP/OVERLAY: dica de scroll + idioma -->
+  <!-- POPUP: só ele visível no início (com idioma dentro) -->
   <div class="scroll-overlay" id="scrollOverlay" aria-hidden="false">
     <div class="scroll-overlay__card" role="dialog" aria-modal="true" aria-label="Boas-vindas">
       <div class="scroll-overlay__top">
@@ -93,7 +91,7 @@
                 <p class="player-kicker" id="playerKicker">Ponto atual</p>
                 <h3 class="player-title" id="playerTitle">—</h3>
 
-                <!-- escolha (só no ponto 6 e 7) -->
+                <!-- ✅ só aparece no 6 e 7 -->
                 <div class="player-choice" id="playerChoice" hidden aria-label="Escolha de percurso">
                   <button class="choice-btn" id="choiceMain" type="button" aria-pressed="true">Ponto</button>
                   <button class="choice-btn" id="choiceAlt" type="button" aria-pressed="false">Alternativo</button>
