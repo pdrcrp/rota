@@ -43,7 +43,6 @@
   <div class="scroll-overlay" id="scrollOverlay" aria-hidden="false">
     <div class="scroll-overlay__card" role="dialog" aria-modal="true" aria-label="Boas-vindas">
       <div class="scroll-overlay__top">
-        <!-- ✅ pedido: Bem vindo! (sem estrela) -->
         <p class="scroll-overlay__title" id="overlayTitle">Bem vindo!</p>
 
         <div class="overlay-lang" aria-label="Idioma">
@@ -94,10 +93,11 @@
                 <p class="player-kicker" id="playerKicker">Paragem atual</p>
                 <h3 class="player-title" id="playerTitle">—</h3>
 
-                <!-- ✅ só aparece no 6 e 7 -->
-                <div class="player-choice" id="playerChoice" hidden aria-label="Escolha de percurso">
-                  <button class="choice-btn" id="choiceMain" type="button" aria-pressed="true">Paragem</button>
-                  <button class="choice-btn" id="choiceAlt" type="button" aria-pressed="false">Alternativo</button>
+                <!-- ✅ Agora: 1 botão toggle (só aparece no 6 e 7) -->
+                <div class="player-choice" id="playerChoice" hidden aria-label="Alternativo">
+                  <button class="choice-btn choice-btn--single" id="choiceAltToggle" type="button" aria-pressed="false">
+                    Alternativo
+                  </button>
                 </div>
 
                 <div class="player-routebar" aria-hidden="true">
