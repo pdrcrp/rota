@@ -175,6 +175,7 @@ const ui = {
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)",
 
     altToggleLabel: (altLabel, altTitle) => `Alternativo ${altLabel} — ${altTitle}`,
+    noAlt: "Sem alternativo",
   },
   en: {
     pageTitle: "Route",
@@ -191,6 +192,7 @@ const ui = {
     resetConfirm: "Restart the route? (This will erase your progress.)",
 
     altToggleLabel: (altLabel, altTitle) => `Alternative ${altLabel} — ${altTitle}`,
+    noAlt: "No alternative",
   }
 };
 
@@ -309,25 +311,39 @@ playerAudio.addEventListener("ended", () => {
   nextBtn.disabled = false;
 });
 
-// ====== ALTERNATIVO: 1 BOTÃO TOGGLE ======
+// ====== ALTERNATIVO: 1 BOTÃO (SEMPRE VISÍVEL) ======
 function updateChoiceUI(){
-  const alt = altChoice[currentRequired];
   if (!playerChoice || !choiceAltToggle) return;
 
+  // Sempre visível
+  playerChoice.hidden = false;
+
+  const alt = altChoice[currentRequired];
+
+  // Sem alternativa nesta paragem -> botão disabled
   if (!alt) {
-    playerChoice.hidden = true;
+    choiceAltToggle.disabled = true;
+    choiceAltToggle.textContent = ui[lang].noAlt;
+    choiceAltToggle.setAttribute("aria-pressed", "false");
+    choiceAltToggle.setAttribute("aria-disabled", "true");
     return;
   }
 
+  // Há alternativa -> botão ativo
   const altP = getById(alt.id);
-  playerChoice.hidden = false;
+  choiceAltToggle.disabled = false;
+  choiceAltToggle.removeAttribute("aria-disabled");
 
-  choiceAltToggle.textContent = ui[lang].altToggleLabel(altP?.label || "", altP?.title?.[lang] || "");
+  choiceAltToggle.textContent = ui[lang].altToggleLabel(
+    altP?.label || "",
+    altP?.title?.[lang] || ""
+  );
+
   choiceAltToggle.setAttribute("aria-pressed", currentVariant === "alt" ? "true" : "false");
 }
 
 choiceAltToggle?.addEventListener("click", () => {
-  if (!altChoice[currentRequired]) return;
+  if (!altChoice[currentRequired]) return; // segurança
   currentVariant = (currentVariant === "alt") ? "main" : "alt";
   updateChoiceUI();
   loadCurrentPoint();
