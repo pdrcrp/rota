@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!doctype html>
 <html lang="pt">
 <head>
@@ -84,7 +85,8 @@
           </div>
         </div>
 
-        <div class="scroll-hint">Faz scroll</div>
+        <!-- ✅ REMOVIDO: texto "Faz scroll" entre mapa e card -->
+        <!-- <div class="scroll-hint">Faz scroll</div> -->
       </div>
     </section>
 
@@ -108,10 +110,10 @@
               </div>
             </div>
 
-            <!-- ✅ Alternativo: 1 botão full-width (sempre visível) -->
-            <div class="player-choice" id="playerChoice">
+            <!-- ✅ Alternativo: só aparece nas paragens com alternativa -->
+            <div class="player-choice" id="playerChoice" hidden>
               <button class="choice-btn choice-btn--single" id="choiceAltToggle" type="button" aria-pressed="false">
-                Sem alternativo
+                Alternativa
               </button>
             </div>
 
