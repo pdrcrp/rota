@@ -174,7 +174,7 @@ const ui = {
     reset: "Recomeçar",
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)",
 
-    altToggleLabel: (altLabel, altTitle) => `Alternativo ${altLabel} — ${altTitle}`,
+    altToggleLabel: (_altLabel, altTitle) => `Alternativa: ${altTitle}`,
     noAlt: "Sem alternativo",
   },
   en: {
@@ -191,7 +191,7 @@ const ui = {
     reset: "Restart",
     resetConfirm: "Restart the route? (This will erase your progress.)",
 
-    altToggleLabel: (altLabel, altTitle) => `Alternative ${altLabel} — ${altTitle}`,
+    altToggleLabel: (_altLabel, altTitle) => `Alternative: ${altTitle}`,
     noAlt: "No alternative",
   }
 };
