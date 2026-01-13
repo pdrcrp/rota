@@ -35,13 +35,11 @@
   --border: rgba(15,79,121,.14);
   --shadowMd: 0 18px 44px rgba(0,0,0,.14);
 
-  /* header creme */
   --headerBg: #f2e7cf;
   --headerText: #0f4f79;
 
   --headerH: 0px;
 
-  /* ✅ AJUSTES pedidos */
   --gapHeaderToTitle: 24px;
   --gapTitleToMap: 2px;
   --gapMapToCard: 2px;
@@ -213,10 +211,13 @@ body.header-hidden .globalbar{
   align-items:flex-start;
   justify-content:center;
   padding: 18px;
-  pointer-events: none;
   background: linear-gradient(to bottom, rgba(0,0,0,.26), rgba(0,0,0,0));
   opacity: 1;
   transition: opacity .25s ease;
+
+  /* ✅ FIX MOBILE: deixa o gesto de scroll passar */
+  pointer-events: auto;
+  touch-action: pan-y;
 }
 .scroll-overlay.is-hidden{ opacity: 0; }
 
@@ -249,7 +250,6 @@ body.header-hidden .globalbar{
 .overlay-lang{
   display:flex;
   gap: 8px;
-  pointer-events: auto;
 }
 
 .scroll-overlay__text{
@@ -366,8 +366,6 @@ body.header-hidden .globalbar{
   transform: translate3d(0, 10px, 0);
 }
 
-/* ✅ REMOVIDO: estilos do scroll-hint (já não existe no HTML) */
-
 /* =========================
    ROUTE
 ========================= */
@@ -425,14 +423,12 @@ body.header-hidden .globalbar{
   text-overflow: ellipsis;
 }
 
-/* ✅ Alternativo: em linha própria (só aparece quando existe alternativa) */
 .player-choice{
   margin-top: 10px;
   display: block;
   width: 100%;
 }
 
-/* Base do botão */
 .choice-btn{
   border-radius: 999px;
   padding: 10px 12px;
@@ -450,7 +446,6 @@ body.header-hidden .globalbar{
   border-color: rgba(15,79,121,.30);
 }
 
-/* ✅ botão full-width */
 .choice-btn--single{
   width: 100%;
   text-align: left;
@@ -545,7 +540,6 @@ body.header-hidden .globalbar{
   line-height: 1.55;
 }
 
-/* Footer */
 .route-footer{
   margin-top: 8px;
   padding: 2px 2px calc(14px + env(safe-area-inset-bottom));
