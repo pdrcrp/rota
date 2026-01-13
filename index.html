@@ -14,20 +14,22 @@
 <body class="header-hidden">
   <!-- HEADER: aparece só depois do 1º scroll -->
   <header class="globalbar" id="globalBar" aria-hidden="true">
-    <div class="globalbar__left">
-      <img class="globalbar__logo" src="assets/logo.png" alt="Postais por Lisboa" />
-      <div class="globalbar__titles">
-        <p class="globalbar__kicker" id="globalKicker">Postais por Lisboa</p>
-        <h1 class="globalbar__title" id="globalTitle">Percurso</h1>
+    <div class="globalbar__inner">
+      <div class="globalbar__left">
+        <img class="globalbar__logo" src="assets/logo.png" alt="Postais por Lisboa" />
+        <div class="globalbar__titles">
+          <p class="globalbar__kicker" id="globalKicker">Postais por Lisboa</p>
+          <h1 class="globalbar__title" id="globalTitle">Percurso</h1>
+        </div>
       </div>
-    </div>
 
-    <div class="globalbar__right">
-      <button class="reset-btn" id="resetBtn" type="button" title="Recomeçar percurso">Recomeçar</button>
+      <div class="globalbar__right">
+        <button class="reset-btn" id="resetBtn" type="button" title="Recomeçar percurso">Recomeçar</button>
 
-      <div class="lang" aria-label="Idioma">
-        <button class="lang-btn header-lang-btn" data-lang="pt" aria-pressed="true">PT</button>
-        <button class="lang-btn header-lang-btn" data-lang="en" aria-pressed="false">EN</button>
+        <div class="lang" aria-label="Idioma">
+          <button class="lang-btn header-lang-btn" data-lang="pt" aria-pressed="true">PT</button>
+          <button class="lang-btn header-lang-btn" data-lang="en" aria-pressed="false">EN</button>
+        </div>
       </div>
     </div>
 
@@ -37,11 +39,14 @@
     </div>
   </header>
 
-  <!-- POPUP: só ele visível no início (com idioma dentro) -->
+  <!-- POPUP: só ele visível no início -->
   <div class="scroll-overlay" id="scrollOverlay" aria-hidden="false">
     <div class="scroll-overlay__card" role="dialog" aria-modal="true" aria-label="Boas-vindas">
       <div class="scroll-overlay__top">
-        <p class="scroll-overlay__title" id="overlayTitle">Bem-vindo ✨</p>
+        <div class="overlay-brand">
+          <span class="badge-dot" aria-hidden="true"></span>
+          <p class="scroll-overlay__title" id="overlayTitle">Bem-vindo ✨</p>
+        </div>
 
         <div class="overlay-lang" aria-label="Idioma">
           <button class="lang-btn overlay-lang-btn" data-lang="pt" aria-pressed="true">PT</button>
