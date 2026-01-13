@@ -462,15 +462,17 @@ body.header-hidden .globalbar{
   border-color: rgba(15,79,121,.30);
 }
 
-/* ✅ versão single: ocupa 1 linha e não fica “feio” */
 .choice-btn--single{
   width: 100%;
   text-align: left;
   font-size: 12px;
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+
+  white-space: normal;     /* permite várias linhas */
+  overflow: visible;       /* não corta */
+  text-overflow: clip;     /* remove ellipsis */
+  word-break: break-word;  /* quebra palavras longas se necessário */
+  padding: 10px 12px;      /* um pouco mais confortável para 2+ linhas */
 }
 
 .player-routebar{
