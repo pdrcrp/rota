@@ -41,9 +41,9 @@
   --headerH: 0px;
 
   /* ✅ AJUSTES pedidos */
-  --gapHeaderToTitle: 24px;  /* header -> título */
-  --gapTitleToMap: -10px;      /* ✅ ainda menos: título/sub -> mapa */
-  --gapMapToCard: -10px;       /* ✅ ainda menos: mapa -> card */
+  --gapHeaderToTitle: 24px;   /* MAIS distância header -> título */
+  --gapTitleToMap: 2px;       /* MENOS distância título/sub -> mapa */
+  --gapMapToCard: 2px;        /* MENOS distância mapa -> card */
 }
 
 *{ box-sizing:border-box; }
@@ -439,14 +439,17 @@ body.header-hidden .globalbar{
   text-overflow: ellipsis;
 }
 
-/* ✅ Agora: 1 botão só (linha única) */
+/* ✅ Área da alternativa: agora preparada para botão full-width em linha própria */
 .player-choice{
   margin-top: 10px;
-  display:block;
+  display: block;     /* em vez de flex */
+  width: 100%;
 }
+
+/* Base do botão */
 .choice-btn{
   border-radius: 999px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: 1px solid rgba(15,79,121,.16);
   background: rgba(15,79,121,.06);
   font-weight: 900;
@@ -456,23 +459,20 @@ body.header-hidden .globalbar{
 }
 .choice-btn:hover{ background: rgba(15,79,121,.08); }
 .choice-btn:active{ transform: scale(.99); }
-
 .choice-btn[aria-pressed="true"]{
   background: rgba(15,79,121,.14);
   border-color: rgba(15,79,121,.30);
 }
 
+/* ✅ PEDIDO: botão único, ocupa o card todo e o texto fica “ao longo do botão” */
 .choice-btn--single{
   width: 100%;
   text-align: left;
   font-size: 12px;
-  line-height: 1.25;
-
-  white-space: normal;     /* permite várias linhas */
-  overflow: visible;       /* não corta */
-  text-overflow: clip;     /* remove ellipsis */
-  word-break: break-word;  /* quebra palavras longas se necessário */
-  padding: 10px 12px;      /* um pouco mais confortável para 2+ linhas */
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .player-routebar{
