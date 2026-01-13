@@ -42,8 +42,8 @@
 
   /* ✅ AJUSTES pedidos */
   --gapHeaderToTitle: 24px;  /* header -> título */
-  --gapTitleToMap: -5px;      /* ✅ ainda menos: título/sub -> mapa */
-  --gapMapToCard: -5px;       /* ✅ ainda menos: mapa -> card */
+  --gapTitleToMap: -10px;      /* ✅ ainda menos: título/sub -> mapa */
+  --gapMapToCard: -10px;       /* ✅ ainda menos: mapa -> card */
 }
 
 *{ box-sizing:border-box; }
