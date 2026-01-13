@@ -41,9 +41,9 @@
   --headerH: 0px;
 
   /* ✅ AJUSTES pedidos */
-  --gapHeaderToTitle: 24px;   /* MAIS distância header -> título */
-  --gapTitleToMap: 2px;       /* MENOS distância título/sub -> mapa */
-  --gapMapToCard: 2px;        /* MENOS distância mapa -> card */
+  --gapHeaderToTitle: 24px;  /* header -> título */
+  --gapTitleToMap: 0px;      /* ✅ ainda menos: título/sub -> mapa */
+  --gapMapToCard: 0px;       /* ✅ ainda menos: mapa -> card */
 }
 
 *{ box-sizing:border-box; }
@@ -290,7 +290,6 @@ body.header-hidden .globalbar{
   justify-content:flex-start;
 }
 
-/* ✅ MAIS distância do header até ao título */
 .intro-top{
   margin-top: var(--gapHeaderToTitle);
   text-align:center;
@@ -302,7 +301,6 @@ body.header-hidden .globalbar{
   text-align: center;
 }
 
-/* título/subtitle BEGE */
 .intro-title{
   margin: 0 0 2px;
   font-family: var(--fontEditorial);
@@ -327,7 +325,6 @@ body.header-hidden .globalbar{
   will-change: transform, opacity;
 }
 
-/* ✅ MENOS gap título -> mapa */
 .intro-visual{
   position: relative;
   margin-top: var(--gapTitleToMap);
@@ -338,7 +335,6 @@ body.header-hidden .globalbar{
   justify-content:center;
 }
 
-/* MAPA sem moldura/quadrado */
 .intro-map{
   position: relative;
   width: 100vw;
@@ -387,7 +383,7 @@ body.header-hidden .globalbar{
 }
 
 /* =========================
-   ROUTE (menos gap mapa->card)
+   ROUTE
 ========================= */
 .route{ min-height: 100vh; }
 
@@ -400,7 +396,6 @@ body.header-hidden .globalbar{
 .route-wrap.is-hidden{ opacity: 0; pointer-events: none; }
 .route-wrap.is-shown{ opacity: 1; pointer-events: auto; }
 
-/* ✅ MENOS distância mapa -> card */
 .player{
   margin-top: var(--gapMapToCard);
 }
@@ -444,16 +439,14 @@ body.header-hidden .globalbar{
   text-overflow: ellipsis;
 }
 
-/* switch Paragem / Alternativo */
+/* ✅ Agora: 1 botão só (linha única) */
 .player-choice{
   margin-top: 10px;
-  display:flex;
-  gap: 10px;
+  display:block;
 }
 .choice-btn{
-  flex: 1 1 auto;
   border-radius: 999px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 1px solid rgba(15,79,121,.16);
   background: rgba(15,79,121,.06);
   font-weight: 900;
@@ -463,9 +456,21 @@ body.header-hidden .globalbar{
 }
 .choice-btn:hover{ background: rgba(15,79,121,.08); }
 .choice-btn:active{ transform: scale(.99); }
+
 .choice-btn[aria-pressed="true"]{
   background: rgba(15,79,121,.14);
   border-color: rgba(15,79,121,.30);
+}
+
+/* ✅ versão single: ocupa 1 linha e não fica “feio” */
+.choice-btn--single{
+  width: 100%;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .player-routebar{
