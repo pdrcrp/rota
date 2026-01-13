@@ -89,7 +89,7 @@ const points = [
     audio:{pt:"audio/pt/optA.mp3", en:"audio/en/optA.mp3"} },
 
   { id:"optB", kind:"optional", label:"11",
-    title:{pt:"Livraria Bertrand – Chiado", en:"Livraria Bertrand – Chiado"},
+    title:{pt:"Livraria Bertrand – Chiado", en:"Livraria Bertrand - Chiado"},
     text:{
       pt:"Fundada em 1732, a Livraria Bertrand é considerada a livraria mais antiga do mundo ainda em funcionamento. Representa um símbolo da história literária e cultural de Lisboa.",
       en:"Founded in 1732, Livraria Bertrand is considered the oldest operating bookstore in the world. It represents a key symbol of Lisbon’s literary and cultural history."
