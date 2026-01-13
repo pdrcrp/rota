@@ -174,7 +174,6 @@ const ui = {
     reset: "Recomeçar",
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)",
 
-    // ✅ 1 botão: só o nome da alternativa (linha única)
     altToggleLabel: (altLabel, altTitle) => `Alternativo ${altLabel} — ${altTitle}`,
   },
   en: {
