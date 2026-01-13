@@ -215,13 +215,15 @@ body.header-hidden .globalbar{
   opacity: 1;
   transition: opacity .25s ease;
 
-  /* ✅ FIX MOBILE: deixa o gesto de scroll passar */
-  pointer-events: auto;
-  touch-action: pan-y;
+  /* ✅ CRÍTICO: NÃO bloquear o scroll por baixo */
+  pointer-events: none;
 }
 .scroll-overlay.is-hidden{ opacity: 0; }
 
+/* ✅ o cartão (e botões) continuam clicáveis */
 .scroll-overlay__card{
+  pointer-events: auto;
+
   margin-top: max(10px, env(safe-area-inset-top));
   width: min(92vw, 460px);
   background: rgba(255,255,255,.92);
@@ -250,6 +252,7 @@ body.header-hidden .globalbar{
 .overlay-lang{
   display:flex;
   gap: 8px;
+  pointer-events: auto;
 }
 
 .scroll-overlay__text{
