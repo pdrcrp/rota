@@ -1,3 +1,5 @@
+// app.js
+
 // ====== CONFIGURAÇÃO ======
 const REQUIRED_TOTAL = 9;
 
@@ -138,7 +140,7 @@ const overlayText = document.getElementById("overlayText");
 const footerCopy = document.getElementById("footerCopy");
 
 const intro = document.getElementById("intro");
-const scrollHint = document.getElementById("scrollHint");
+const scrollHint = document.getElementById("scrollHint"); // (não existe no HTML, pode ser null)
 const scrollOverlay = document.getElementById("scrollOverlay");
 const introTitle = document.getElementById("introTitle");
 const introSub = document.getElementById("introSub");
@@ -175,7 +177,6 @@ const ui = {
     resetConfirm: "Queres mesmo recomeçar? (Vai apagar o progresso.)",
 
     altToggleLabel: (_altLabel, altTitle) => `Alternativa: ${altTitle}`,
-    noAlt: "Sem alternativo",
   },
   en: {
     pageTitle: "Route",
@@ -191,8 +192,7 @@ const ui = {
     reset: "Restart",
     resetConfirm: "Restart the route? (This will erase your progress.)",
 
-    altToggleLabel: (_altLabel, altTitle) => `Alternative: ${altTitle}`,const choiceAltToggle = document.getElementById("choiceAltToggle") || document.getElementById("choiceAlt");
-    noAlt: "No alternative",
+    altToggleLabel: (_altLabel, altTitle) => `Alternative: ${altTitle}`,
   }
 };
 
@@ -311,28 +311,22 @@ playerAudio.addEventListener("ended", () => {
   nextBtn.disabled = false;
 });
 
-// ====== ALTERNATIVO: 1 BOTÃO (SEMPRE VISÍVEL) ======
+// ====== ALTERNATIVO: 1 BOTÃO (SÓ QUANDO EXISTE) ======
 function updateChoiceUI(){
+  const alt = altChoice[currentRequired];
   if (!playerChoice || !choiceAltToggle) return;
 
-  // Sempre visível
-  playerChoice.hidden = false;
-
-  const alt = altChoice[currentRequired];
-
-  // Sem alternativa nesta paragem -> botão disabled
+  // ✅ Se não houver alternativa -> remove o bloco inteiro
   if (!alt) {
-    choiceAltToggle.disabled = true;
-    choiceAltToggle.textContent = ui[lang].noAlt;
+    playerChoice.hidden = true;
+    currentVariant = "main";
     choiceAltToggle.setAttribute("aria-pressed", "false");
-    choiceAltToggle.setAttribute("aria-disabled", "true");
     return;
   }
 
-  // Há alternativa -> botão ativo
+  // ✅ Há alternativa -> mostra o bloco e atualiza texto/estado
   const altP = getById(alt.id);
-  choiceAltToggle.disabled = false;
-  choiceAltToggle.removeAttribute("aria-disabled");
+  playerChoice.hidden = false;
 
   choiceAltToggle.textContent = ui[lang].altToggleLabel(
     altP?.label || "",
@@ -343,7 +337,7 @@ function updateChoiceUI(){
 }
 
 choiceAltToggle?.addEventListener("click", () => {
-  if (!altChoice[currentRequired]) return; // segurança
+  if (!altChoice[currentRequired]) return;
   currentVariant = (currentVariant === "alt") ? "main" : "alt";
   updateChoiceUI();
   loadCurrentPoint();
@@ -544,6 +538,7 @@ function updateIntroAnimation() {
   layerUpdate(introLayers[4], t5, 10);
   layerUpdate(introLayers[5], t6, 12);
 
+  // (scrollHint é null, e o "Faz scroll" já foi removido do HTML)
   if (scrollHint) {
     const tHint = clamp01(scrolled / 0.18);
     scrollHint.style.opacity = String(1 - tHint);
